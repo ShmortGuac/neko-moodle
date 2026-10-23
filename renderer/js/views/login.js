@@ -1,31 +1,38 @@
+const DEFAULT_FOOTER = "Unofficial client. You sign in on your site's own login page.";
+
 Views.login = {
   render(root, { message } = {}) {
-    const theme = App.theme();
+    const cfg = Theme.cfg.login;
+    const card = cfg.card;
+    const badge = cfg.badge;
+    const startSite = App.prefs.site || Site.presets()[0]?.url || '';
+    const profile = Site.forUrl(startSite);
+    const presets = Site.presets();
+    const subtitleFor = (site) => (site || !cfg.subtitle.includes('{site}') ? fill(cfg.subtitle, { site }) : cfg.subtitleFallback);
     root.innerHTML = `
       <div class="login">
-        <div class="login__art ${theme.loginFade ? `login__art--fade-${theme.loginFade}` : ''}">
-          <div class="login__title-jp">湊あくあ</div>
-          <img src="${theme.login}" alt="">
-        </div>
+        ${elementsHTML(cfg.elements)}
+        <div class="login__slot" style="${esc(`left:${cssLen(card.x)};top:${cssLen(card.y)};width:min(${cssLen(card.width, 'px')}, calc(100% - 40px))`)}">
         <div class="card login__panel">
-          <img class="login__chibi" src="assets/aqua-chibi.png" alt="">
+          ${badge.image ? `<img class="login__badge" src="${esc(badge.image)}" alt="" style="${esc(`width:${cssLen(badge.width, 'px')};top:${cssLen(badge.top, 'px')};right:${cssLen(badge.right, 'px')}`)}">` : ''}
           <div class="brandmark">
-            <div class="brandmark__icon">${Icons.anchorFill}</div>
-            <h1>i-Taleem</h1>
+            <span id="brandTile">${brandTileHTML(profile)}</span>
+            <h1 id="brand">${esc(profile?.brand || APP_NAME)}</h1>
           </div>
-          <p class="login__sub" id="siteLine">Unofficial desktop client · あくあ edition</p>
+          <p class="login__sub" id="siteLine">${esc(subtitleFor(null))}</p>
 
           <div class="field" style="margin-bottom:16px">
-            <label>Site</label>
-            <div class="site-picks" id="sitePicks">
-              ${SITE_PRESETS.map((p) => `<button type="button" class="chip" data-site="${esc(p.url)}">${esc(p.label)}</button>`).join('')}
-            </div>
-            <input class="input" id="site" value="${esc(App.prefs.site || DEFAULT_SITE)}" spellcheck="false">
+            <label for="site">Site</label>
+            ${presets.length ? `
+              <div class="site-picks" id="sitePicks">
+                ${presets.map((p) => `<button type="button" class="chip" data-site="${esc(p.url)}">${esc(p.label)}</button>`).join('')}
+              </div>` : ''}
+            <input class="input" id="site" value="${esc(startSite)}" placeholder="yourschool.edu/moodle" spellcheck="false">
           </div>
 
           <div id="error">${message ? `<div class="notice notice--error">${esc(message)}</div>` : ''}</div>
 
-          <button class="btn btn--primary btn--block" id="ssoBtn">${Icons.key} Sign in with IIUM account</button>
+          <button class="btn btn--primary btn--block" id="ssoBtn">${Icons.key} <span id="ssoLabel">${esc(profile?.ssoLabel || 'Sign in with browser')}</span></button>
 
           <details id="pwBox" style="margin-top:14px">
             <summary>${Icons.chevron} Use username &amp; password instead</summary>
@@ -38,11 +45,12 @@ Views.login = {
                 <label for="password">Password</label>
                 <input class="input" id="password" type="password" autocomplete="current-password" required>
               </div>
-              <button class="btn btn--ghost btn--block" type="submit" id="loginBtn">Sign in ${Icons.anchor}</button>
+              <button class="btn btn--ghost btn--block" type="submit" id="loginBtn">Sign in ${motifHTML('motif--inline')}</button>
             </form>
           </details>
 
-          <div class="login__foot">Not affiliated with IIUM. You sign in on IIUM's own login page.</div>
+          <div class="login__foot" id="loginFoot">${esc(profile?.loginFooter || DEFAULT_FOOTER)}</div>
+        </div>
         </div>
       </div>`;
 
@@ -74,7 +82,7 @@ Views.login = {
       if (err.code === 'invalidlogin') {
         return publicConfig?.typeoflogin === 1
           ? 'Wrong username or password. Please try again.'
-          : 'Password sign-in was rejected. i-Taleem uses IIUM single sign-on, so try "Sign in with IIUM account".';
+          : `Password sign-in was rejected. This site uses single sign-on, so try "${$('#ssoLabel', root).textContent}".`;
       }
       return err.message;
     };
@@ -82,20 +90,29 @@ Views.login = {
     const markPreset = () => {
       const value = siteInput.value.trim().replace(/\/+$/, '');
       $$('[data-site]', root).forEach((b) => b.classList.toggle('chip--pink', b.dataset.site === value));
+      const p = Site.forUrl(value);
+      $('#brand', root).textContent = p?.brand || APP_NAME;
+      $('#brandTile', root).innerHTML = brandTileHTML(p);
+      $('#ssoLabel', root).textContent = p?.ssoLabel || 'Sign in with browser';
+      $('#loginFoot', root).textContent = p?.loginFooter || DEFAULT_FOOTER;
     };
 
     // Ask the site how it wants us to log in and show its real name.
+    let probeId = 0;
     const probe = async () => {
+      const id = ++probeId;
       markPreset();
       publicConfig = null;
-      $('#siteLine', root).textContent = 'Unofficial desktop client · あくあ edition';
+      $('#siteLine', root).textContent = subtitleFor(null);
+      let config = null;
       try {
-        publicConfig = await italeem.getPublicConfig(siteInput.value);
+        config = await italeem.getPublicConfig(siteInput.value);
       } catch {
         // invalid address: the login attempt will show a proper error
       }
-      if (!publicConfig) return;
-      $('#siteLine', root).textContent = stripHtml(publicConfig.sitename) || 'i-Taleem';
+      if (id !== probeId || !config) return; // a newer lookup took over
+      publicConfig = config;
+      $('#siteLine', root).textContent = subtitleFor(stripHtml(publicConfig.sitename));
       if (publicConfig.typeoflogin === 1) pwBox.open = true;
     };
     siteInput.addEventListener('change', probe);

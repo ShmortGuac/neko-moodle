@@ -15,27 +15,39 @@ Views.dashboard = {
       ? Math.round(withProgress.reduce((s, c) => s + c.progress, 0) / withProgress.length)
       : null;
 
+    // Values a theme can use in hero templates, e.g. "Hello, {name}!" or "There is {overdue} overdue".
     const hour = new Date().getHours();
-    const [jp, en] = hour < 12 ? ['おはよう〜!', 'Good morning'] : hour < 18 ? ['こんにちは!', 'Good afternoon'] : ['こんばんは〜!', 'Good evening'];
-    const summary = week.length
-      ? `You have ${week.length} thing${week.length > 1 ? 's' : ''} due this week${overdue.length ? ` and ${overdue.length} overdue` : ''}. Ganbatte!`
-      : overdue.length
-        ? `Nothing new this week, but ${overdue.length} overdue item${overdue.length > 1 ? 's' : ''} need love.`
-        : 'Nothing due this week. Time for a stream break~';
-
-    const theme = App.theme();
+    const part = hour < 12 ? 'Morning' : hour < 18 ? 'Afternoon' : 'Evening';
+    const today = startOfDay().getTime() / 1000;
+    const vars = {
+      name: givenName(App.user),
+      fullname: displayName(App.user),
+      greeting: t(`greet${part}`),
+      eyebrow: t(`eyebrow${part}`),
+      courses: courses.length,
+      due_week: week.length,
+      due_today: events.filter((e) => e.timesort >= now && e.timesort < today + 86400).length,
+      overdue: overdue.length,
+      and_overdue: overdue.length ? ` and ${overdue.length} overdue` : '',
+      site: brandName(),
+    };
+    const hero = Theme.cfg.hero;
+    const subtitle = typeof hero.subtitle === 'string'
+      ? hero.subtitle
+      : hero.subtitle[week.length ? 'due' : overdue.length ? 'overdueOnly' : 'clear'];
+    const eyebrow = fill(hero.eyebrow, vars);
+    const stripes = hero.stripes && Theme.cfg.decorations.stripes;
+    const textWidth = hero.textWidth ?? (hero.elements.length ? 54 : 100);
     const soon = events.slice(0, 6);
 
     root.innerHTML = `
-      <section class="hero ${theme.banner ? 'hero--banner' : ''}">
-        ${theme.banner
-          ? `<img class="hero__banner" src="${theme.banner}" alt="">`
-          : `<div class="hero__sign">あくあ</div>
-             <img class="hero__art" src="${theme.hero}" alt="" style="width:${theme.heroWidth}px;top:${theme.heroTop}px">`}
-        <div class="hero__text">
-          <div class="hero__eyebrow">${jp}</div>
-          <h1>${en}, ${esc(givenName(App.user))}!</h1>
-          <p>${esc(summary)}</p>
+      <section class="hero ${stripes ? 'hero--stripes' : ''}">
+        ${hero.overlay ? '<div class="hero__overlay"></div>' : ''}
+        ${elementsHTML(hero.elements, vars)}
+        <div class="hero__text" style="max-width:${esc(cssLen(textWidth))}">
+          ${eyebrow ? `<div class="hero__eyebrow">${esc(eyebrow)}</div>` : ''}
+          <h1>${esc(fill(hero.title, vars))}</h1>
+          <p>${esc(fill(subtitle, vars))}</p>
           <div class="hero__actions">
             <button class="btn btn--light" data-nav="deadlines">${Icons.clock} View deadlines</button>
             <button class="btn btn--ghost" data-nav="courses">${Icons.book} My courses</button>
@@ -52,7 +64,7 @@ Views.dashboard = {
           <div class="card__body">
             ${soon.length
               ? `<div class="deadline-list">${soon.map(App.ui.deadline).join('')}</div>`
-              : emptyHTML('All caught up!', 'Nothing due. Aqua is proud of you ⚓')}
+              : emptyHTML(t('allCaughtUp'), t('allCaughtUpText'))}
           </div>
         </div>
         <div class="card">
@@ -60,7 +72,7 @@ Views.dashboard = {
           <div class="card__body">
             <div class="stats">
               <div class="stat stat--pink"><div class="stat__num">${courses.length}</div><div class="stat__label">Courses</div></div>
-              <div class="stat stat--aqua"><div class="stat__num">${week.length}</div><div class="stat__label">Due in 7 days</div></div>
+              <div class="stat stat--accent"><div class="stat__num">${week.length}</div><div class="stat__label">Due in 7 days</div></div>
               <div class="stat stat--danger"><div class="stat__num">${overdue.length}</div><div class="stat__label">Overdue</div></div>
               <div class="stat stat--purple"><div class="stat__num">${avgProgress === null ? '–' : `${avgProgress}%`}</div><div class="stat__label">Avg. progress</div></div>
             </div>

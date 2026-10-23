@@ -21,5 +21,8 @@ contextBridge.exposeInMainWorld('italeemBridge', {
   openDownloads: call('file:open-downloads'),
   openExternal: call('shell:open'),
 
+  listThemes: call('themes:list'),
+  listSites: call('sites:list'),
+
   setTitlebar: (color, symbolColor) => ipcRenderer.invoke('ui:titlebar', { color, symbolColor }),
 });

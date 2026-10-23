@@ -41,25 +41,6 @@ function titleCase(s) {
   return s.toLowerCase().replace(/[a-z][a-z']*/g, (w, i) => (i > 0 && SMALL_WORDS.has(w) ? w : w[0].toUpperCase() + w.slice(1)));
 }
 
-// IIUM puts the whole name in "firstname". Keep the given name: "AIMAN HAKIMI BIN ..." -> "Aiman Hakimi".
-function givenName(user) {
-  const raw = stripHtml(user.firstname || user.fullname || '');
-  return titleCase(raw.split(/\s+(?:bin|binti|bt|bte|b\.|a\/l|a\/p)\s+/i)[0].trim()) || raw;
-}
-
-// "SEM1 BICS 3303 Section 02 Parallel & Distributed Systems" -> {code:'BICS 3303', section:'02', title:'Parallel & Distributed Systems'}
-function parseCourse(c) {
-  const full = stripHtml(c.fullname);
-  const m = full.match(/^(?:SEM\s*\d+\s+)?([A-Z]{2,6}\s?\d{3,5})\s*(?:Section\s*(\w+))?\s*[-:–]?\s*(.*)$/i);
-  if (!m || !m[3]) return { code: stripHtml(c.shortname), section: null, title: titleCase(full) };
-  return { code: m[1].toUpperCase(), section: m[2] || null, title: titleCase(m[3]) };
-}
-
-function courseTag(c) {
-  const p = parseCourse(c);
-  return p.section ? `${p.code} · Sec ${p.section}` : p.code;
-}
-
 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 function relTime(sec) {
   const diff = sec * 1000 - Date.now();
@@ -97,7 +78,7 @@ function startOfDay(d = new Date()) {
   return x;
 }
 
-const palette = (id) => `pal-${Math.abs(Number(id) || 0) % 5}`;
+const palette = (id) => `pal-${Math.abs(Number(id) || 0) % Theme.paletteSize}`;
 
 function toast(title, { message = '', type = 'info', actions = [], timeout = 4500 } = {}) {
   const el = document.createElement('div');
@@ -125,19 +106,30 @@ function toast(title, { message = '', type = 'info', actions = [], timeout = 450
   };
 }
 
-function loadingHTML(text = 'Aqua is fetching your stuff') {
-  return `<div class="loading"><img src="assets/aqua-gamer.png" alt=""><div class="dots">${esc(text)}</div></div>`;
+// kind: '' | 'boot' | 'course' | 'deadlines' picks the theme's loading text.
+function loadingHTML(kind = '') {
+  const cfg = Theme.cfg.loading;
+  const text = cfg[kind ? `${kind}Text` : 'text'] || cfg.text;
+  const anim = cfg.animation && cfg.animation !== 'none' ? `anim-${cfg.animation}` : '';
+  const art = cfg.image
+    ? `<img class="${anim}" src="${esc(cfg.image)}" alt="" style="width:${esc(cssLen(cfg.imageWidth, 'px'))}">`
+    : `<span class="spinner" style="--spinner-size:${esc(cssLen(cfg.spinner.size, 'px'))}"></span>`;
+  return `<div class="loading">${art}<div class="dots">${esc(text)}</div></div>`;
 }
 
 function emptyHTML(title, text = '') {
-  return `<div class="empty"><img src="assets/aqua-chibi.png" alt=""><b>${esc(title)}</b>${text ? `<span>${esc(text)}</span>` : ''}</div>`;
+  const { empty, emptyWidth } = Theme.cfg.states;
+  const art = empty ? `<img src="${esc(empty)}" alt="" style="width:${esc(cssLen(emptyWidth, 'px'))}">` : `<span class="empty__icon">${Icons.check}</span>`;
+  return `<div class="empty">${art}<b>${esc(title)}</b>${text ? `<span>${esc(text)}</span>` : ''}</div>`;
 }
 
 function errorHTML(err) {
+  const { error } = Theme.cfg.states;
+  const art = error ? `<img src="${esc(error)}" alt="">` : `<span class="empty__icon">${Icons.alert}</span>`;
   return `
     <div class="card"><div class="card__body" style="padding-top:22px">
       <div class="empty empty--error">
-        <img src="assets/aqua-akutan.jpg" alt="">
+        ${art}
         <b>Something went wrong</b><span>${esc(err.message || String(err))}</span>
         <button class="btn btn--ghost btn--sm" data-retry>${Icons.refresh} Try again</button>
       </div>

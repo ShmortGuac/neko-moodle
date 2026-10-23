@@ -9,7 +9,7 @@ Views.courses = {
     root.innerHTML = `
       <div class="page-head">
         <div>
-          <div class="page-head__jp">コース</div>
+          ${t('eyebrowCourses') ? `<div class="page-head__eyebrow">${esc(t('eyebrowCourses'))}</div>` : ''}
           <h1>My courses</h1>
           <p>${courses.length} enrolled</p>
         </div>
@@ -37,7 +37,7 @@ Views.courses = {
       $$('#seg button', root).forEach((b) => b.classList.toggle('is-active', b.dataset.f === filter));
       $('#grid', root).innerHTML = list.length
         ? list.map(App.ui.courseCard).join('')
-        : `<div style="grid-column:1/-1">${emptyHTML('No courses here', q ? 'Try a different search.' : 'Try the "All" filter.')}</div>`;
+        : `<div style="grid-column:1/-1">${emptyHTML(t('noCourses'), q ? 'Try a different search.' : 'Try the "All" filter.')}</div>`;
     };
 
     $('#q', root).addEventListener('input', (e) => {

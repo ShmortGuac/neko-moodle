@@ -5,6 +5,9 @@ const moodle = require('./src/moodle');
 const session = require('./src/session');
 const { ssoLogin } = require('./src/sso');
 const downloads = require('./src/downloads');
+const packs = require('./src/packs');
+
+packs.registerScheme();
 
 let win = null;
 let client = null;
@@ -25,11 +28,11 @@ function createWindow() {
     minWidth: 980,
     minHeight: 640,
     show: false,
-    backgroundColor: '#fbd6f5',
+    backgroundColor: '#f3f4f9',
     title: 'i-Taleem Desktop',
-    icon: path.join(__dirname, 'renderer/assets/aqua-chibi.png'),
+    icon: path.join(__dirname, 'build/icon.png'),
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#fbd6f5', symbolColor: '#2f2b6e', height: 44 },
+    titleBarOverlay: { color: '#f3f4f9', symbolColor: '#1d2033', height: 44 },
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -149,11 +152,15 @@ handle('file:open-downloads', async () => {
 
 handle('shell:open', async (url) => openExternal(url));
 
+handle('themes:list', async () => packs.listThemes());
+handle('sites:list', async () => packs.listSites());
+
 handle('ui:titlebar', async ({ color, symbolColor }) => {
   if (win && process.platform !== 'darwin') win.setTitleBarOverlay({ color, symbolColor, height: 44 });
 });
 
 app.whenReady().then(() => {
+  packs.handleProtocol();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

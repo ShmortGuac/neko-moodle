@@ -1,0 +1,30 @@
+{
+  "name": "IIUM i-Taleem",
+  "brand": "i-Taleem",
+  "logo": "iium/logo.png",
+  "hosts": ["italeemc.iium.edu.my", "italeemc-arc.iium.edu.my", "italeem.iium.edu.my"],
+
+  "sites": [
+    { "label": "Current session", "url": "https://italeemc.iium.edu.my" },
+    { "label": "2025 archive", "url": "https://italeemc.iium.edu.my/2025" },
+    { "label": "2024 archive", "url": "https://italeemc-arc.iium.edu.my/2024" }
+  ],
+
+  "ssoLabel": "Sign in with IIUM account",
+  "loginFooter": "Not affiliated with IIUM. You sign in on IIUM's own login page.",
+  "disclaimer": "Not affiliated with IIUM.",
+
+  "courseName": {
+    "pattern": "^(?:SEM\\s*\\d+\\s+)?([A-Z]{2,6}\\s?\\d{3,5})\\s*(?:Section\\s*(\\w+))?\\s*[-:–]?\\s*(.*)$",
+    "flags": "i",
+    "code": 1,
+    "section": 2,
+    "title": 3,
+    "titleCase": true
+  },
+
+  "personName": {
+    "givenNameSplit": "\\s+(?:bin|binti|bt|bte|b\\.|a/l|a/p)\\s+",
+    "titleCase": true
+  }
+}

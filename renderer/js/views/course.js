@@ -6,15 +6,12 @@ const MOD_ICONS = {
   attendance: '🙋', zoom: '🎥', bigbluebuttonbn: '🎥', choicegroup: '👥', label: '🏷️',
 };
 
-// Chibi shown on the course banner, picked per course.
-const COURSE_MASCOTS = ['assets/aqua-chibi.png', 'assets/aqua-gamer.png'];
-
 Views.course = {
   nav: 'courses',
   title: () => 'Course',
 
   async render(root, params, ctx) {
-    root.innerHTML = loadingHTML('Opening course');
+    root.innerHTML = loadingHTML('course');
     const [courses, sections] = await Promise.all([
       App.getCourses(),
       App.call('core_course_get_contents', { courseid: params.id }),
@@ -23,6 +20,7 @@ Views.course = {
 
     const course = courses.find((c) => c.id === params.id) || { id: params.id, fullname: 'Course', shortname: `course-${params.id}` };
     const parsed = parseCourse(course);
+    const mascots = Theme.cfg.courseBanner.mascots || [];
     const courseFolder = stripHtml(course.shortname) || `course-${course.id}`;
     ctx.setTitle(`${parsed.code} · ${parsed.title}`);
 
@@ -93,7 +91,7 @@ Views.course = {
         return `
           <details class="section" ${idx < 4 ? 'open' : ''}>
             <summary>
-              <span class="section__num">${s.section === 0 ? Icons.anchorFill : esc(s.section ?? idx)}</span>
+              <span class="section__num">${s.section === 0 && Theme.cfg.motif ? motifHTML() : esc(s.section ?? idx)}</span>
               <span>${esc(name)}</span>
               ${count ? `<span class="chip">${count} item${count > 1 ? 's' : ''}</span>` : ''}
               <span class="chev">${Icons.chevron}</span>
@@ -106,13 +104,13 @@ Views.course = {
 
     root.innerHTML = `
       <section class="course-hero ${palette(course.id)}">
-        <span class="course-hero__anchor">${Icons.anchorFill}</span>
-        ${App.prefs.mascot ? `<img class="course-hero__art" src="${COURSE_MASCOTS[course.id % COURSE_MASCOTS.length]}" alt="">` : ''}
+        ${motifHTML('course-hero__motif')}
+        ${App.prefs.mascot && mascots.length ? `<img class="course-hero__art" src="${esc(mascots[course.id % mascots.length])}" alt="">` : ''}
         <span class="chip">${esc(courseTag(course))}</span>
         <h1>${esc(parsed.title)}</h1>
         <div class="course-hero__actions">
           <button class="btn btn--light" id="dlAll" ${files.length ? '' : 'disabled'}>${Icons.download} Download all files (${files.length})</button>
-          <button class="btn btn--ghost" data-url="${esc(`${App.user.site}/course/view.php?id=${course.id}`)}">${Icons.external} Open on i-Taleem</button>
+          <button class="btn btn--ghost" data-url="${esc(`${App.user.site}/course/view.php?id=${course.id}`)}">${Icons.external} Open on ${esc(brandName())}</button>
         </div>
       </section>
       <div class="sections">${sectionsHTML || emptyHTML('This course is empty', 'Your lecturer has not added anything yet.')}</div>`;

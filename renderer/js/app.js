@@ -1,60 +1,11 @@
-// App core: themes, preferences, navigation, data loading and shared UI pieces.
-
-const DEFAULT_SITE = 'https://italeemc.iium.edu.my';
-
-// Shown as quick picks on the login screen. Older sessions live on archive sites.
-const SITE_PRESETS = [
-  { label: 'Current session', url: 'https://italeemc.iium.edu.my' },
-  { label: '2025 archive', url: 'https://italeemc.iium.edu.my/2025' },
-  { label: '2024 archive', url: 'https://italeemc-arc.iium.edu.my/2024' },
-];
-
-// Each theme pairs a colour block in styles/theme.css with artwork from assets/.
-//   login     art on the sign-in screen (loginFade: 'all' or 'sides' softens hard crop edges)
-//   hero      cutout on the dashboard banner; heroWidth/heroTop position it (px)
-//   banner    alternative: a full-bleed picture behind the dashboard banner
-const THEMES = {
-  maid: {
-    name: 'Maid Pink', jp: 'メイド',
-    preview: 'assets/banner-maid.png',
-    login: 'assets/aqua-maid-full.png',
-    hero: 'assets/aqua-casual.png', heroWidth: 300, heroTop: -16,
-    swatches: ['#f4a7ea', '#46c3f0', '#2f2b6e'],
-  },
-  summer: {
-    name: 'Summer Aqua', jp: 'なつ',
-    preview: 'assets/banner-summer.png',
-    login: 'assets/aqua-summer-full.png', loginFade: 'sides',
-    hero: 'assets/aqua-summer-full.png', heroWidth: 330, heroTop: -40,
-    swatches: ['#a5e2f9', '#ec66cc', '#213a6b'],
-  },
-  night: {
-    name: 'Midnight', jp: 'よる',
-    preview: 'assets/aqua-cat.jpg',
-    login: 'assets/aqua-maid.png', loginFade: 'all',
-    hero: 'assets/aqua-maid-full.png', heroWidth: 240, heroTop: -10,
-    swatches: ['#1b1942', '#f47fd9', '#63d2fb'],
-  },
-  halloween: {
-    name: 'Halloween', jp: 'ハロウィン',
-    preview: 'assets/banner-halloween.jpg',
-    login: 'assets/aqua-casual.png', loginFade: 'all',
-    banner: 'assets/banner-halloween.jpg',
-    swatches: ['#2a1838', '#ff9440', '#c38bff'],
-  },
-};
+// App core: preferences, navigation, data loading and shared UI pieces.
+// Looks come from the active theme (theme.js), institution quirks from site profiles (site.js).
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home' },
   { id: 'courses', label: 'Courses', icon: 'book' },
   { id: 'deadlines', label: 'Deadlines', icon: 'clock' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
-];
-
-// Things Aqua says when you click her in the sidebar. Add your own!
-const MASCOT_LINES = [
-  'がんばって! ⚓', 'Don\'t forget your assignments~', 'あくあ〜!', 'Aqua believes in you!',
-  'One more chapter, then games?', 'Did you drink water today?', 'Deadline? What deadline... 😳',
 ];
 
 const Views = {};
@@ -68,10 +19,6 @@ const App = {
   prefs: loadPrefs(),
 
   // ---------- Preferences & theme ----------
-  theme() {
-    return THEMES[App.prefs.theme] || THEMES.maid;
-  },
-
   savePrefs() {
     try {
       localStorage.setItem('prefs', JSON.stringify(App.prefs));
@@ -81,26 +28,49 @@ const App = {
   },
 
   applyTheme() {
-    const root = document.documentElement;
-    root.dataset.theme = THEMES[App.prefs.theme] ? App.prefs.theme : 'maid';
-    document.body.classList.toggle('no-kana', !App.prefs.kana);
-    document.body.classList.toggle('no-mascot', !App.prefs.mascot);
-    const cs = getComputedStyle(root);
-    italeem.setTitlebar(cs.getPropertyValue('--bg').trim(), cs.getPropertyValue('--text').trim()).catch(() => {});
+    Theme.apply(App.prefs.theme, App.prefs.variant);
+    const body = document.body;
+    const { decorations, sidebar } = Theme.cfg;
+    const watermark = decorations.watermark || '';
+    body.classList.toggle('no-watermark', !watermark || !App.prefs.watermark);
+    body.classList.toggle('no-mascot', !sidebar.mascot || !App.prefs.mascot);
+    body.classList.toggle('has-stripes', Boolean(decorations.stripes));
+    body.classList.toggle('has-stars', Boolean(decorations.stars));
+    $('.watermark').innerHTML = watermark ? `<span>${esc(watermark)}</span>`.repeat(6) : '';
+    const cs = getComputedStyle(document.documentElement);
+    const bar = cs.getPropertyValue('--topbar').trim() || cs.getPropertyValue('--bg').trim();
+    italeem.setTitlebar(bar, cs.getPropertyValue('--text').trim()).catch(() => {});
+  },
+
+  // A different theme can change art and text everywhere, so redraw the shell and current page.
+  reloadTheme() {
+    App.applyTheme();
+    if (!App.user || !App.current) return;
+    const { name, params } = App.current;
+    App.showShell();
+    App.navigate(name, params, { push: false });
+    App.updateBadge(App.cache.events);
   },
 
   // ---------- Boot & auth ----------
   async boot() {
-    App.applyTheme();
+    Theme.restoreCache();
     App.renderStars();
     App.bindGlobalEvents();
-    $('#app').innerHTML = loadingHTML('Waking Aqua up');
+    try {
+      await Promise.all([Theme.load(), Site.load()]);
+    } catch (e) {
+      $('#app').innerHTML = errorHTML(e);
+      return;
+    }
+    App.applyTheme();
+    $('#app').innerHTML = loadingHTML('boot');
     try {
       const user = await italeem.restore();
       if (user) return App.onSignedIn(user);
       App.showLogin();
     } catch (e) {
-      App.showLogin(`Couldn't reach i-Taleem: ${e.message}`);
+      App.showLogin(`Couldn't reach your Moodle site: ${e.message}`);
     }
   },
 
@@ -141,8 +111,8 @@ const App = {
       <div class="shell">
         <aside class="sidebar">
           <div class="brand">
-            <div class="brandmark__icon">${Icons.anchorFill}</div>
-            <div><div class="brand__name">i-Taleem</div><div class="brand__sub">あくあ edition</div></div>
+            ${brandTileHTML()}
+            <div><div class="brand__name">${esc(brandName())}</div><div class="brand__sub">${esc(Theme.cfg.sidebar.tagline)}</div></div>
           </div>
           <nav class="nav">
             ${NAV.map((n) => `
@@ -152,7 +122,7 @@ const App = {
           </nav>
           <div class="sidebar__mascot">
             <div class="sidebar__bubble" id="bubble"></div>
-            <img src="assets/aqua-chibi.png" alt="Aqua" id="mascot" title="Click me!">
+            <img src="${esc(Theme.cfg.sidebar.mascot || '')}" alt="${esc(t('mascotName'))}" id="mascot" title="Click me!" style="width:${esc(cssLen(Theme.cfg.sidebar.mascotWidth, 'px'))}">
           </div>
           <div class="me">
             <img class="avatar" src="${esc(u.userpicture)}" alt="" data-fallback>
@@ -296,7 +266,9 @@ const App = {
 
   mascotSay() {
     const bubble = $('#bubble');
-    bubble.textContent = MASCOT_LINES[Math.floor(Math.random() * MASCOT_LINES.length)];
+    const lines = Theme.cfg.sidebar.mascotLines;
+    if (!Array.isArray(lines) || !lines.length) return;
+    bubble.textContent = lines[Math.floor(Math.random() * lines.length)];
     bubble.classList.add('is-on');
     clearTimeout(App._bubbleTimer);
     App._bubbleTimer = setTimeout(() => bubble.classList.remove('is-on'), 2600);
@@ -324,23 +296,44 @@ const App = {
 };
 
 function loadPrefs() {
-  const defaults = { theme: 'maid', mascot: true, kana: true, site: DEFAULT_SITE, username: '', courseFilter: 'current' };
+  const defaults = { theme: 'default', variant: 'light', mascot: true, watermark: true, site: '', username: '', courseFilter: 'current' };
+  let saved = {};
   try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem('prefs') || '{}') };
+    saved = JSON.parse(localStorage.getItem('prefs') || '{}');
   } catch {
-    return defaults;
+    // corrupted prefs: start fresh
   }
+  // Before theme packs, "theme" held an Aqua variant and "kana" was the watermark toggle.
+  if (['maid', 'summer', 'night', 'halloween'].includes(saved.theme)) {
+    saved.variant = saved.theme;
+    saved.theme = 'aqua';
+  }
+  if ('kana' in saved) {
+    saved.watermark = saved.kana;
+    delete saved.kana;
+  }
+  return { ...defaults, ...saved };
+}
+
+// Brand tile: the site's logo, else the theme's motif, else a generic icon.
+function brandTileHTML(profile = Site.current()) {
+  if (profile?.logo) return `<div class="brandmark__icon brandmark__icon--logo"><img src="${esc(profile.logo)}" alt=""></div>`;
+  return `<div class="brandmark__icon">${Theme.cfg.motif ? motifHTML() : Icons.book}</div>`;
 }
 
 // ---------- Shared UI pieces ----------
 App.ui = {
   courseCard(c) {
+    const cardCfg = Theme.cfg.courseCard;
+    const overlay = cardCfg.overlay;
     const hasProgress = c.progress !== null && c.progress !== undefined;
     return `
       <button class="course-card" data-course="${c.id}" title="${esc(stripHtml(c.fullname))}">
-        <div class="course-card__cover ${palette(c.id)}">
-          ${c._image ? `<img src="${esc(c._image)}" alt="" loading="lazy" data-fallback>` : ''}
-          <span class="course-card__anchor">${Icons.anchorFill}</span>
+        <div class="course-card__cover ${palette(c.id)} ${overlay ? 'course-card__cover--overlay' : ''}">
+          ${c._image ? `<img class="course-card__img" src="${esc(c._image)}" alt="" loading="lazy" data-fallback>` : ''}
+          ${overlay
+            ? `<img class="course-card__overlay" src="${esc(overlay)}" alt="" style="${esc(`object-fit:${cardCfg.overlayFit};object-position:${cardCfg.overlayPosition}`)}">`
+            : motifHTML('course-card__motif')}
           <span class="course-card__short">${esc(courseTag(c))}</span>
         </div>
         <div class="course-card__body">
@@ -364,7 +357,7 @@ App.ui = {
       ? '<span class="chip chip--danger">Overdue</span>'
       : `<span class="chip ${soon ? 'chip--pink' : ''}">${esc(relTime(e.timesort))}</span>`;
     return `
-      <button class="deadline" data-url="${esc(e.action?.url || e.url || '')}" title="Open on i-Taleem">
+      <button class="deadline" data-url="${esc(e.action?.url || e.url || '')}" title="Open on ${esc(brandName())}">
         <div class="datebadge ${overdue ? 'datebadge--overdue' : soon ? 'datebadge--soon' : ''}"><b>${d.getDate()}</b><span>${month}</span></div>
         <div>
           <div class="deadline__name">${esc(e.activityname || e.name)}</div>
