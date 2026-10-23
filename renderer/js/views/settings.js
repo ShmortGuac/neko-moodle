@@ -4,7 +4,7 @@ Views.settings = {
   // Switch the app to the theme so the change is visible, then open it in the editor.
   async openEditorFor(id) {
     try {
-      await italeem.openEditor(id);
+      await neko.openEditor(id);
     } catch (e) {
       toast('Could not open the editor', { type: 'error', message: e.message });
     }
@@ -145,14 +145,14 @@ Views.settings = {
     }));
     $('#newTheme', root).addEventListener('click', async () => {
       const name = await promptModal({ title: 'New theme', label: 'Name', value: 'My theme', okLabel: 'Create', hint: 'Starts from the Default theme. You can change everything in the editor.' });
-      if (name) Views.settings.openEditorFor(await italeem.createTheme({ name }));
+      if (name) Views.settings.openEditorFor(await neko.createTheme({ name }));
     });
     $('#editTheme', root).addEventListener('click', async () => {
       if (!Theme.pack.locked) return Views.settings.openEditorFor(Theme.pack.id);
       const name = await promptModal({ title: `Customize ${Theme.pack.name}`, label: 'Name for your copy', value: `My ${Theme.pack.name}`, okLabel: 'Make a copy', hint: "Built-in themes can't be changed, so you'll edit a copy." });
-      if (name) Views.settings.openEditorFor(await italeem.createTheme({ name, from: Theme.pack.id }));
+      if (name) Views.settings.openEditorFor(await neko.createTheme({ name, from: Theme.pack.id }));
     });
-    $('#openDl', root).addEventListener('click', () => italeem.openDownloads());
+    $('#openDl', root).addEventListener('click', () => neko.openDownloads());
     $('#logout', root).addEventListener('click', () => App.signOut());
   },
 };

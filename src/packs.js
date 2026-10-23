@@ -148,6 +148,7 @@ function formatJson(value, indent = '') {
 
 function listSites() {
   const sites = [];
+  if (!fs.existsSync(SITES_DIR)) return sites;
   for (const file of fs.readdirSync(SITES_DIR)) {
     const id = path.basename(file, '.json');
     if (!file.endsWith('.json') || !ID.test(id)) continue;

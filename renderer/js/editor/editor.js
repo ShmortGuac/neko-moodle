@@ -40,7 +40,7 @@ const Editor = {
     Editor.id = new URLSearchParams(location.search).get('theme');
     try {
       await Promise.all([Site.load(), Theme.load()]);
-      const data = await italeem.readTheme(Editor.id);
+      const data = await neko.readTheme(Editor.id);
       Editor.draft = data.theme;
       Editor.css = data.css || '';
       Editor.locked = data.locked;
@@ -73,15 +73,15 @@ const Editor = {
     };
     App.downloadFile = async () => toast('Preview only', { message: 'Downloads are off in the theme editor.' });
     App.signOut = async () => toast('Preview only', { message: 'Signing out is off in the theme editor.' });
-    italeem.download = previewOnly('Downloading');
-    italeem.login = previewOnly('Signing in');
-    italeem.loginSSO = previewOnly('Signing in');
-    italeem.createTheme = previewOnly('Creating themes');
-    italeem.openEditor = previewOnly('Opening the editor');
-    italeem.openExternal = async () => toast('Preview only', { message: 'Links don\'t open from the preview.' });
-    italeem.openDownloads = async () => {};
-    italeem.getPublicConfig = async () => ({ sitename: PreviewData.user.sitename, typeoflogin: 2 });
-    italeem.setTitlebar = async () => {};
+    neko.download = previewOnly('Downloading');
+    neko.login = previewOnly('Signing in');
+    neko.loginSSO = previewOnly('Signing in');
+    neko.createTheme = previewOnly('Creating themes');
+    neko.openEditor = previewOnly('Opening the editor');
+    neko.openExternal = async () => toast('Preview only', { message: 'Links don\'t open from the preview.' });
+    neko.openDownloads = async () => {};
+    neko.getPublicConfig = async () => ({ sitename: PreviewData.user.sitename, typeoflogin: 2 });
+    neko.setTitlebar = async () => {};
 
     // Keep the editor's page tabs and variant in sync when the preview itself navigates or switches variant.
     const navigate = App.navigate;
@@ -197,7 +197,7 @@ const Editor = {
     const problem = Editor.validate();
     if (problem) return toast('Can\'t save yet', { type: 'error', message: problem });
     try {
-      await italeem.saveTheme({ id: Editor.id, theme: Editor.draft, css: Editor.css });
+      await neko.saveTheme({ id: Editor.id, theme: Editor.draft, css: Editor.css });
       Editor.dirty = false;
       Editor.updateHead();
       toast('Saved', { type: 'ok', message: 'The app now uses the new version.' });
@@ -525,7 +525,7 @@ const Editor = {
     if (btn.id === 'edSave') return Editor.save();
     if (btn.id === 'edUndo') return Editor.undo();
     if (btn.id === 'edRedo') return Editor.redo();
-    if (btn.id === 'edFolder') return italeem.revealTheme(Editor.id);
+    if (btn.id === 'edFolder') return neko.revealTheme(Editor.id);
     const { action, path, index } = btn.dataset;
     if (!action) return;
     if (btn.tagName === 'BUTTON' || action === 'select-el') e.preventDefault();
@@ -643,7 +643,7 @@ const Editor = {
 
   async pickAsset(kind) {
     try {
-      return await italeem.importThemeAsset({ id: Editor.id, kind });
+      return await neko.importThemeAsset({ id: Editor.id, kind });
     } catch (e) {
       toast('Couldn\'t add the file', { type: 'error', message: e.message });
       return null;

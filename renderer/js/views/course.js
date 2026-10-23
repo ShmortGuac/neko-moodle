@@ -139,7 +139,7 @@ Views.course = {
         const { file, folder } = files[i];
         t.update('Downloading files…', `${n + 1} / ${indices.length} · ${file.filename}`);
         try {
-          const res = await italeem.download({ url: file.fileurl, filename: file.filename, folder, filesize: file.filesize });
+          const res = await neko.download({ url: file.fileurl, filename: file.filename, folder, filesize: file.filesize });
           lastPath = res.path;
           res.skipped ? skipped++ : saved++;
         } catch (err) {
@@ -153,7 +153,7 @@ Views.course = {
         type: failed ? 'error' : 'ok',
         message: `${saved} saved · ${skipped} already up to date${failed ? ` · ${failed} failed` : ''}`,
         timeout: 8000,
-        actions: lastPath ? [{ label: 'Show in folder', onClick: () => italeem.showInFolder(lastPath) }] : [],
+        actions: lastPath ? [{ label: 'Show in folder', onClick: () => neko.showInFolder(lastPath) }] : [],
       });
     }
   },

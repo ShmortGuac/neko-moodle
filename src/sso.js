@@ -47,7 +47,7 @@ function ssoLogin(parent, site, launchUrl) {
         const payload = decodeURIComponent(target.slice(`${SCHEME}://`.length).replace(/^token=/, ''));
         // Format: base64("signature:::token:::privatetoken")
         const [, token] = Buffer.from(payload, 'base64').toString('utf8').split(':::');
-        if (!token) throw new MoodleError('i-Taleem did not return a login token.');
+        if (!token) throw new MoodleError('The site did not return a login token.');
         finish(null, token);
       } catch (e) {
         finish(e);

@@ -39,7 +39,7 @@ const App = {
     $('.watermark').innerHTML = watermark ? `<span>${esc(watermark)}</span>`.repeat(6) : '';
     const cs = getComputedStyle(document.documentElement);
     const bar = cs.getPropertyValue('--topbar').trim() || cs.getPropertyValue('--bg').trim();
-    italeem.setTitlebar(bar, cs.getPropertyValue('--text').trim()).catch(() => {});
+    neko.setTitlebar(bar, cs.getPropertyValue('--text').trim()).catch(() => {});
   },
 
   // A different theme can change art and text everywhere, so redraw the shell and current page.
@@ -65,7 +65,7 @@ const App = {
     }
     App.applyTheme();
     // The theme editor saved something: reload packs and redraw.
-    italeem.onThemesChanged(async () => {
+    neko.onThemesChanged(async () => {
       await Theme.load();
       if (App.user) App.reloadTheme();
       else {
@@ -75,7 +75,7 @@ const App = {
     });
     $('#app').innerHTML = loadingHTML('boot');
     try {
-      const user = await italeem.restore();
+      const user = await neko.restore();
       if (user) return App.onSignedIn(user);
       App.showLogin();
     } catch (e) {
@@ -92,7 +92,7 @@ const App = {
   },
 
   async signOut(message) {
-    await italeem.logout().catch(() => {});
+    await neko.logout().catch(() => {});
     App.user = null;
     App.cache = {};
     App.history = [];
@@ -203,7 +203,7 @@ const App = {
 
   // ---------- Data ----------
   call(wsfunction, params) {
-    return italeem.call(wsfunction, params);
+    return neko.call(wsfunction, params);
   },
 
   async getCourses(force = false) {
@@ -213,7 +213,7 @@ const App = {
       if (c.courseimage && !c.courseimage.startsWith('data:')) return c.courseimage;
       return c.overviewfiles?.find((f) => (f.mimetype || '').startsWith('image/'))?.fileurl || '';
     };
-    const images = await italeem.tokenize(list.map(pickImage));
+    const images = await neko.tokenize(list.map(pickImage));
     list.forEach((c, i) => { c._image = images[i] || null; });
     list.sort((a, b) => (b.lastaccess || 0) - (a.lastaccess || 0));
     App.cache.courses = list;
@@ -244,15 +244,15 @@ const App = {
   async downloadFile(file, folder) {
     const t = toast('Downloading…', { message: file.filename, timeout: 0 });
     try {
-      const res = await italeem.download({ url: file.fileurl, filename: file.filename, folder, filesize: file.filesize });
+      const res = await neko.download({ url: file.fileurl, filename: file.filename, folder, filesize: file.filesize });
       t.dismiss();
       toast(res.skipped ? 'Already downloaded' : 'Saved!', {
         type: 'ok',
         message: file.filename,
         timeout: 7000,
         actions: [
-          { label: 'Open', onClick: () => italeem.openPath(res.path).catch((e) => toast('Could not open file', { type: 'error', message: e.message })) },
-          { label: 'Show in folder', onClick: () => italeem.showInFolder(res.path) },
+          { label: 'Open', onClick: () => neko.openPath(res.path).catch((e) => toast('Could not open file', { type: 'error', message: e.message })) },
+          { label: 'Show in folder', onClick: () => neko.showInFolder(res.path) },
         ],
       });
       return res;
@@ -288,7 +288,7 @@ const App = {
       const link = e.target.closest('[data-url]');
       if (link) {
         e.preventDefault();
-        if (link.dataset.url) italeem.openExternal(link.dataset.url);
+        if (link.dataset.url) neko.openExternal(link.dataset.url);
         return;
       }
       const course = e.target.closest('[data-course]');

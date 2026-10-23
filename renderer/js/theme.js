@@ -104,7 +104,7 @@ const Theme = {
   draftCss: null,
 
   async load() {
-    Theme.packs = await italeem.listThemes();
+    Theme.packs = await neko.listThemes();
   },
 
   find(packId, variantId) {

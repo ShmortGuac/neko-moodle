@@ -5,7 +5,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const call = (channel) => (...args) => ipcRenderer.invoke(channel, ...args);
 
 // Everything the UI can do lives here. The renderer never sees Node or the raw token store.
-contextBridge.exposeInMainWorld('italeemBridge', {
+contextBridge.exposeInMainWorld('nekoBridge', {
   getPublicConfig: call('auth:public-config'),
   login: (site, username, password) => ipcRenderer.invoke('auth:login', { site, username, password }),
   loginSSO: (site, launchurl) => ipcRenderer.invoke('auth:sso', { site, launchurl }),

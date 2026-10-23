@@ -9,19 +9,6 @@ const packs = require('./src/packs');
 
 packs.registerScheme();
 
-// NEKO used to be called "i-Taleem Desktop": move its downloads folder so already-downloaded files are
-// still recognised. (The app-data folder can't be moved this way: Electron creates the new one before
-// this code runs.)
-function migrateOldDownloads() {
-  const from = path.join(app.getPath('downloads'), 'i-Taleem');
-  try {
-    if (fs.existsSync(from) && !fs.existsSync(downloads.root())) fs.renameSync(from, downloads.root());
-  } catch (e) {
-    console.warn(`Could not move ${from}: ${e.message}`);
-  }
-}
-migrateOldDownloads();
-
 const ICON = path.join(__dirname, process.platform === 'win32' ? 'build/icon.ico' : 'build/icon.png');
 
 let win = null;

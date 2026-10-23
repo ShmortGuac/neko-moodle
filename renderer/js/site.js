@@ -10,7 +10,7 @@ const Site = {
   regexCache: new Map(),
 
   async load() {
-    Site.profiles = await italeem.listSites();
+    Site.profiles = await neko.listSites();
   },
 
   forUrl(url) {
@@ -45,7 +45,7 @@ function brandName(profile = Site.current()) {
 }
 
 // Splits a course's full name into code / section / title using the site's courseName rule.
-// IIUM: "SEM1 BICS 3303 Section 02 Parallel & Distributed Systems" -> BICS 3303 / 02 / Parallel & Distributed Systems
+// e.g. "SEM1 CS 2101 Section 02 Data Structures" -> CS 2101 / 02 / Data Structures
 function parseCourse(c) {
   const full = stripHtml(c.fullname);
   const rule = Site.current()?.courseName;
@@ -66,7 +66,7 @@ function courseTag(c) {
   return p.section ? `${p.code} · Sec ${p.section}` : p.code;
 }
 
-// Name used in greetings. IIUM: "AIMAN HAKIMI BIN ..." -> "Aiman Hakimi".
+// Name used in greetings. A personName rule can trim and tidy it, e.g. "ALEX TAN BIN ALI" -> "Alex Tan".
 function givenName(user) {
   const rule = Site.current()?.personName;
   const raw = stripHtml(user.firstname || user.fullname || '');

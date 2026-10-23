@@ -19,7 +19,7 @@ function safeName(name) {
 }
 
 async function downloadFile(client, { url, filename, folder = [], filesize }) {
-  if (!client.isOwnUrl(url)) throw new MoodleError('Refusing to download from outside i-Taleem.');
+  if (!client.isOwnUrl(url)) throw new MoodleError('Refusing to download from outside your Moodle site.');
 
   const segments = (Array.isArray(folder) ? folder : [folder])
     .flatMap((s) => String(s || '').split(/[\\/]/))

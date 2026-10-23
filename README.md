@@ -33,8 +33,8 @@ The app gets a Moodle app token the same way the official app does, and stores i
 | **Site profiles** | `sites/<id>.json` | One institution's quirks: quick-pick URLs, SSO button label, course-name and person-name parsing |
 | **Core app** | `main.js`, `src/`, `renderer/` | Talking to Moodle, pages, downloads |
 
-Built in: the neutral **Default** theme (Light / Dark) and the **IIUM i-Taleem** site profile.
-Make your own themes in the theme editor, or drop a theme folder into `themes/`.
+Built in: the neutral **Default** theme (Light / Dark). Make your own themes in the theme editor, or drop a
+theme folder into `themes/`.
 
 ### Theme packs
 
@@ -49,8 +49,8 @@ is in [`themes/README.md`](themes/README.md).
 
 ### Site profiles
 
-`sites/<id>.json` applies when the signed-in site's host is listed in `hosts`. See `sites/iium.json`.
-Without a matching profile, the app uses plain Moodle names and labels.
+Optional per-site tweaks (name, logo, quick picks, sign-in label, course-name tidying) in `sites/<id>.json`.
+See [`sites/README.md`](sites/README.md). Without a matching profile, NEKO uses plain Moodle names and labels.
 
 ## Developing
 

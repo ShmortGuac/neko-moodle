@@ -106,7 +106,7 @@ Views.login = {
       $('#siteLine', root).textContent = subtitleFor(null);
       let config = null;
       try {
-        config = await italeem.getPublicConfig(siteInput.value);
+        config = await neko.getPublicConfig(siteInput.value);
       } catch {
         // invalid address: the login attempt will show a proper error
       }
@@ -132,7 +132,7 @@ Views.login = {
       showError('');
       busy(ssoBtn, true, 'Finish signing in in the new window…');
       try {
-        const user = await italeem.loginSSO(siteInput.value, publicConfig?.launchurl);
+        const user = await neko.loginSSO(siteInput.value, publicConfig?.launchurl);
         remember();
         App.onSignedIn(user);
       } catch (err) {
@@ -146,7 +146,7 @@ Views.login = {
       showError('');
       busy(loginBtn, true, 'Signing in');
       try {
-        const user = await italeem.login(siteInput.value, $('#username', root).value.trim(), $('#password', root).value);
+        const user = await neko.login(siteInput.value, $('#username', root).value.trim(), $('#password', root).value);
         remember();
         App.onSignedIn(user);
       } catch (err) {

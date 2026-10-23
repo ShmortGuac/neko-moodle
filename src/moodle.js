@@ -11,10 +11,10 @@ class MoodleError extends Error {
   }
 }
 
-// Accepts things like "italeem.iium.edu.my", "https://italeem.iium.edu.my/my/" or a pasted login URL.
+// Accepts things like "moodle.example.edu", "https://moodle.example.edu/my/" or a pasted login URL.
 function normalizeSite(input) {
   let s = String(input || '').trim();
-  if (!s) throw new MoodleError('Please enter the i-Taleem site address.');
+  if (!s) throw new MoodleError('Please enter your Moodle site address.');
   if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
   let u;
   try {

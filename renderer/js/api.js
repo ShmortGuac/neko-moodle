@@ -1,7 +1,7 @@
-// `italeem.*` — the app's API, backed by the preload bridge.
+// `neko.*` — the app's API, backed by the preload bridge.
 // Unwraps {ok, data} results and turns failures into Errors that keep their Moodle error code.
-const italeem = Object.fromEntries(
-  Object.entries(window.italeemBridge).map(([name, fn]) => [
+const neko = Object.fromEntries(
+  Object.entries(window.nekoBridge).map(([name, fn]) => [
     name,
     name.startsWith('on') ? fn : async (...args) => {
       const res = await fn(...args);
