@@ -22,6 +22,14 @@ contextBridge.exposeInMainWorld('italeemBridge', {
   openExternal: call('shell:open'),
 
   listThemes: call('themes:list'),
+  readTheme: call('theme:read'),
+  saveTheme: call('theme:save'),
+  createTheme: call('theme:create'),
+  importThemeAsset: call('theme:asset'),
+  revealTheme: call('theme:reveal'),
+  openEditor: call('editor:open'),
+  // Not wrapped by api.js: subscribes to theme changes saved in any window.
+  onThemesChanged: (cb) => { ipcRenderer.on('themes:changed', () => cb()); },
   listSites: call('sites:list'),
 
   setTitlebar: (color, symbolColor) => ipcRenderer.invoke('ui:titlebar', { color, symbolColor }),

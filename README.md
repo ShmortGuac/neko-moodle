@@ -1,8 +1,10 @@
-# Desktop client for Moodle
+# NEKO
 
-An unofficial, themeable desktop client for Moodle sites, built with Electron.
+<img src="build/icon.png" width="96" alt="NEKO">
+
+NEKO is a Moodle Client for desktops with supports for themes and customizability.
 It talks to Moodle through the same web services the official mobile app uses, so it works with any site that has
-mobile app access enabled.
+mobile app access enabled. Built with Electron.
 
 ## Run it
 
@@ -20,7 +22,8 @@ The app gets a Moodle app token the same way the official app does, and stores i
 - **Courses**: search and current/past filter
 - **Course page**: sections and activities, clickable links, per-file download, **Download all files** (skips files you already have)
 - **Deadlines**: grouped into Overdue / Today / Tomorrow / This week / Later
-- **Settings**: theme picker, decorations, sign out
+- **Settings**: theme picker, theme options, theme editor, sign out
+- Files are saved to `Downloads\NEKO\<course>\<section>\`
 
 ## The three layers
 
@@ -30,8 +33,8 @@ The app gets a Moodle app token the same way the official app does, and stores i
 | **Site profiles** | `sites/<id>.json` | One institution's quirks: quick-pick URLs, SSO button label, course-name and person-name parsing |
 | **Core app** | `main.js`, `src/`, `renderer/` | Talking to Moodle, pages, downloads |
 
-Built in: the neutral **Default** theme (Light / Dark), the **Minato Aqua** theme (Maid Pink, Summer Aqua, Midnight,
-Halloween) and the **IIUM i-Taleem** site profile.
+Built in: the neutral **Default** theme (Light / Dark) and the **IIUM i-Taleem** site profile.
+Make your own themes in the theme editor, or drop a theme folder into `themes/`.
 
 ### Theme packs
 
@@ -40,7 +43,9 @@ Files are served to the UI from `theme://<id>/...`, which can only read inside t
 Themes control colours, fonts, corner radius, backgrounds, the login page layout, the loading screen,
 the dashboard banner and its text, course card overlays, mascots and the About text.
 
-**The full format is in [`themes/README.md`](themes/README.md).**
+Themes are made in the built-in **theme editor** (Settings → New theme / Edit theme): a separate window
+with every option as a form field and a live preview of the real pages on sample data. The full format
+is in [`themes/README.md`](themes/README.md).
 
 ### Site profiles
 
@@ -71,6 +76,5 @@ const grades = await App.call('gradereport_overview_get_course_grades', {});
 
 ## Notes
 
-- The Minato Aqua artwork in `themes/aqua/` and `reference/` belongs to its original artists. It's for personal use;
-  leave it out of anything you publish.
+- NEKO is unofficial and not affiliated with Moodle HQ or any institution.
 - Be gentle with the server: the app only fetches when you open a page or press refresh.

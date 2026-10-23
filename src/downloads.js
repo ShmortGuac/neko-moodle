@@ -1,4 +1,4 @@
-// Saves course files to Downloads/i-Taleem/<course>/<...>.
+// Saves course files to Downloads/NEKO/<course>/<...>.
 // Files already on disk with the same size are skipped, so "Download all" works as a sync.
 
 const { app } = require('electron');
@@ -8,7 +8,7 @@ const { Readable } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const { MoodleError } = require('./moodle');
 
-const root = () => path.join(app.getPath('downloads'), 'i-Taleem');
+const root = () => path.join(app.getPath('downloads'), 'NEKO');
 
 function safeName(name) {
   const cleaned = String(name || '')

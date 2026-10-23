@@ -1,8 +1,9 @@
 // Site profiles: per-institution tweaks from sites/<id>.json, picked by the Moodle site's host name.
 // Without a matching profile everything falls back to plain Moodle behaviour.
 
-// Shown wherever no site profile provides a brand. Rename once the app has a name.
-const APP_NAME = 'Desktop Client';
+// The app's name, shown wherever no site profile provides a brand.
+const APP_NAME = 'NEKO';
+const APP_DESCRIPTION = 'NEKO is a Moodle Client for desktops with supports for themes and customizability.';
 
 const Site = {
   profiles: [],

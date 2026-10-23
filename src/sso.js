@@ -20,7 +20,7 @@ function ssoLogin(parent, site, launchUrl) {
       modal: true,
       width: 560,
       height: 760,
-      title: 'Sign in to i-Taleem',
+      title: 'Sign in · NEKO',
       autoHideMenuBar: true,
       backgroundColor: '#ffffff',
       webPreferences: {

@@ -1,5 +1,13 @@
 # Making a theme
 
+**The easy way:** Settings → **New theme** (or **Edit theme**) opens the theme editor, which has a live
+preview with sample data, drag-to-place art, and everything below as form fields. This page is the
+reference for what the editor writes, if you'd rather edit `theme.json` by hand.
+
+Themes made in the editor are saved in your user folder (`%APPDATA%\NEKO\themes\<id>`).
+Built-in themes live in the app's `themes/` folder; the built-in Default is read-only, so "Customize"
+makes a copy.
+
 A theme is a folder in `themes/` with a `theme.json`, an optional `theme.css`, and any images or fonts
 it uses (usually in `assets/`). There's no code: themes are JSON, CSS and images only.
 
@@ -17,7 +25,7 @@ relative to the theme folder. Press `Ctrl+R` in the app to reload after editing.
 one entry in `variants`. Each variant (e.g. Light / Dark) can override **any** section below; objects
 merge key by key, and lists (`elements`, `palette`…) replace the theme's list.
 
-See `themes/default/theme.json` (minimal) and `themes/aqua/theme.json` (uses most features).
+See `themes/default/theme.json` for a minimal theme, and the sections below for everything else.
 
 ---
 
@@ -187,6 +195,7 @@ Greetings and the eyebrow lines come from `strings` (`greetMorning`, `eyebrowMor
   "overlay": "assets/card-overlay.png",   // drawn over the course picture (replaces the default motif + stripe)
   "overlayFit": "cover",                  // cover | contain
   "overlayPosition": "center",
+  "overlayOpacity": 1,                    // 0 = invisible, 1 = solid
   "imageBlend": "tint"                    // "tint" = course picture tinted into the palette, "normal" = as-is
 }
 ```
@@ -217,6 +226,36 @@ Without an `overlay`, cards keep the default look.
   "eyebrowCourses": "", "eyebrowDeadlines": "", "eyebrowSettings": "",   // small line above page titles
   "mascotName": "Mascot", "watermarkName": "Background text"             // labels for the Settings toggles
 }
+```
+
+## Toggles in Settings: `options`
+
+Each option becomes a switch in **Settings → Theme options**, next to the built-in mascot and
+background-text switches. Users' choices are saved per theme.
+
+```jsonc
+"options": [
+  {
+    "id": "stars",                         // letters, numbers, dashes
+    "label": "Floating stars",
+    "description": "Little stars drifting in the background",
+    "default": true,                       // optional, defaults to on
+    "on":  { "decorations": { "stars": true } },    // settings applied while on
+    "off": { "decorations": { "stars": false } }    // settings applied while off
+  },
+  {
+    "id": "big-art", "label": "Bigger login art", "default": false,
+    "on": { "login": { "elements": [ /* … */ ] } }
+  }
+]
+```
+
+`on` / `off` accept anything a variant can override (tokens, strings, art, elements, backgrounds…),
+applied on top of the variant. While an option is on, the page has the class `opt-<id>`, so `theme.css`
+can react too:
+
+```css
+.opt-compact .card__body { padding: 12px; }
 ```
 
 ## Variants

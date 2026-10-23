@@ -1,2 +1,7 @@
 node_modules/
 dist/
+
+# Personal artwork that isn't ours to publish (kept locally)
+themes/aqua/
+reference/
+sites/iium/logo.png

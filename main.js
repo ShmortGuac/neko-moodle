@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const moodle = require('./src/moodle');
@@ -9,8 +9,45 @@ const packs = require('./src/packs');
 
 packs.registerScheme();
 
+// NEKO used to be called "i-Taleem Desktop": move its downloads folder so already-downloaded files are
+// still recognised. (The app-data folder can't be moved this way: Electron creates the new one before
+// this code runs.)
+function migrateOldDownloads() {
+  const from = path.join(app.getPath('downloads'), 'i-Taleem');
+  try {
+    if (fs.existsSync(from) && !fs.existsSync(downloads.root())) fs.renameSync(from, downloads.root());
+  } catch (e) {
+    console.warn(`Could not move ${from}: ${e.message}`);
+  }
+}
+migrateOldDownloads();
+
+const ICON = path.join(__dirname, process.platform === 'win32' ? 'build/icon.ico' : 'build/icon.png');
+
 let win = null;
+let editorWin = null;
 let client = null;
+
+const webPreferences = () => ({
+  preload: path.join(__dirname, 'preload.js'),
+  contextIsolation: true,
+  sandbox: true,
+  nodeIntegration: false,
+});
+
+// Links never navigate an app window; they open in the real browser.
+function guardNavigation(w) {
+  w.webContents.setWindowOpenHandler(({ url }) => {
+    openExternal(url);
+    return { action: 'deny' };
+  });
+  w.webContents.on('will-navigate', (e, url) => {
+    if (!url.startsWith('file://')) {
+      e.preventDefault();
+      openExternal(url);
+    }
+  });
+}
 
 function openExternal(url) {
   try {
@@ -29,32 +66,57 @@ function createWindow() {
     minHeight: 640,
     show: false,
     backgroundColor: '#f3f4f9',
-    title: 'i-Taleem Desktop',
-    icon: path.join(__dirname, 'build/icon.png'),
+    title: 'NEKO',
+    icon: ICON,
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#f3f4f9', symbolColor: '#1d2033', height: 44 },
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      sandbox: true,
-      nodeIntegration: false,
-    },
+    webPreferences: webPreferences(),
   });
 
   win.once('ready-to-show', () => win.show());
   win.loadFile(path.join(__dirname, 'renderer/index.html'));
+  guardNavigation(win);
+}
 
-  // Links never navigate the app window; they open in the real browser.
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    openExternal(url);
-    return { action: 'deny' };
+function openEditor(themeId) {
+  const query = { theme: themeId };
+  if (editorWin && !editorWin.isDestroyed()) {
+    editorWin.loadFile(path.join(__dirname, 'renderer/editor.html'), { query }); // asks first if there are unsaved changes
+    editorWin.focus();
+    return;
+  }
+  editorWin = new BrowserWindow({
+    width: 1500,
+    height: 920,
+    minWidth: 1100,
+    minHeight: 700,
+    show: false,
+    title: 'NEKO theme editor',
+    backgroundColor: '#16181f',
+    icon: ICON,
+    autoHideMenuBar: true,
+    webPreferences: webPreferences(),
   });
-  win.webContents.on('will-navigate', (e, url) => {
-    if (!url.startsWith('file://')) {
-      e.preventDefault();
-      openExternal(url);
-    }
+  editorWin.once('ready-to-show', () => editorWin.show());
+  editorWin.loadFile(path.join(__dirname, 'renderer/editor.html'), { query });
+  guardNavigation(editorWin);
+  // The editor blocks unload while it has unsaved changes; confirm here instead.
+  editorWin.webContents.on('will-prevent-unload', (e) => {
+    const choice = dialog.showMessageBoxSync(editorWin, {
+      type: 'question',
+      buttons: ['Discard changes', 'Keep editing'],
+      defaultId: 1,
+      cancelId: 1,
+      message: 'You have unsaved theme changes.',
+      detail: 'Discard them?',
+    });
+    if (choice === 0) e.preventDefault();
   });
+  editorWin.on('closed', () => { editorWin = null; });
+}
+
+function broadcastThemesChanged() {
+  for (const w of BrowserWindow.getAllWindows()) w.webContents.send('themes:changed');
 }
 
 // IPC results are wrapped as {ok, data} / {ok:false, error, code} so error codes survive the bridge.
@@ -153,10 +215,32 @@ handle('file:open-downloads', async () => {
 handle('shell:open', async (url) => openExternal(url));
 
 handle('themes:list', async () => packs.listThemes());
+handle('theme:read', async (id) => packs.readTheme(id));
+handle('theme:save', async (data) => {
+  packs.saveTheme(data);
+  broadcastThemesChanged();
+});
+handle('theme:create', async (data) => {
+  const id = packs.createTheme(data);
+  broadcastThemesChanged();
+  return id;
+});
+handle('theme:reveal', async (id) => {
+  const dir = packs.themeDir(id);
+  if (dir) await shell.openPath(dir);
+});
+handle('editor:open', async (id) => openEditor(id));
+ipcMain.handle('theme:asset', async (e, data) => {
+  try {
+    return { ok: true, data: await packs.importAsset(BrowserWindow.fromWebContents(e.sender), data) };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
 handle('sites:list', async () => packs.listSites());
 
 handle('ui:titlebar', async ({ color, symbolColor }) => {
-  if (win && process.platform !== 'darwin') win.setTitleBarOverlay({ color, symbolColor, height: 44 });
+  if (win && !win.isDestroyed() && process.platform !== 'darwin') win.setTitleBarOverlay({ color, symbolColor, height: 44 });
 });
 
 app.whenReady().then(() => {

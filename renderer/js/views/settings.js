@@ -1,6 +1,15 @@
 Views.settings = {
   title: () => 'Settings',
 
+  // Switch the app to the theme so the change is visible, then open it in the editor.
+  async openEditorFor(id) {
+    try {
+      await italeem.openEditor(id);
+    } catch (e) {
+      toast('Could not open the editor', { type: 'error', message: e.message });
+    }
+  },
+
   render(root) {
     const u = App.user;
     const profile = Site.current();
@@ -18,6 +27,11 @@ Views.settings = {
     const decorations = [
       Theme.cfg.sidebar.mascot ? toggle('mascot', t('mascotName'), 'Show the theme\'s mascot in the sidebar and on course pages') : '',
       Theme.cfg.decorations.watermark ? toggle('watermark', t('watermarkName'), `The big "${Theme.cfg.decorations.watermark}" text behind everything`) : '',
+      ...Theme.options.map((o) => `
+        <div class="toggle-row">
+          <div><b>${esc(o.label || o.id)}</b><span>${esc(o.description || '')}</span></div>
+          <label class="switch"><input type="checkbox" data-option="${esc(o.id)}" ${o.value ? 'checked' : ''}><i></i></label>
+        </div>`),
     ].join('');
 
     root.innerHTML = `
@@ -30,7 +44,13 @@ Views.settings = {
       </div>
 
       <div class="card" style="margin-bottom:22px">
-        <div class="card__head"><h3 class="card__title">${Icons.heart} Theme</h3></div>
+        <div class="card__head">
+          <h3 class="card__title">${Icons.heart} Theme</h3>
+          <div class="toolbar">
+            <button class="btn btn--ghost btn--sm" id="newTheme">${Icons.star} New theme</button>
+            <button class="btn btn--ghost btn--sm" id="editTheme">${Icons.settings} ${Theme.pack.locked ? 'Customize' : 'Edit theme'}</button>
+          </div>
+        </div>
         <div class="card__body">
           ${Theme.packs.map((pack) => `
             <div class="theme-pack">
@@ -51,7 +71,7 @@ Views.settings = {
       <div class="settings-grid">
         ${decorations ? `
           <div class="card">
-            <div class="card__head"><h3 class="card__title">${Icons.star} Decorations</h3></div>
+            <div class="card__head"><h3 class="card__title">${Icons.star} Theme options</h3></div>
             <div class="card__body">${decorations}</div>
           </div>` : ''}
 
@@ -59,7 +79,7 @@ Views.settings = {
           <div class="card__head"><h3 class="card__title">${Icons.folder} Downloads</h3></div>
           <div class="card__body">
             <p style="margin:0 0 14px;color:var(--text-muted);font-size:13px;line-height:1.6">
-              Files are saved to <b>Downloads\\i-Taleem\\&lt;course&gt;\\&lt;section&gt;</b>. Files you already have are skipped.
+              Files are saved to <b>Downloads\\NEKO\\&lt;course&gt;\\&lt;section&gt;</b>. Files you already have are skipped.
             </p>
             <button class="btn btn--ghost" id="openDl">${Icons.folder} Open downloads folder</button>
           </div>
@@ -98,9 +118,10 @@ Views.settings = {
           <div class="card__body about">
             <div>
               <b style="color:var(--text)">${esc(APP_NAME)}</b> v0.1.0<br>
-              An unofficial desktop client for Moodle sites.
+              ${esc(APP_DESCRIPTION)}
               ${profile?.disclaimer ? esc(profile.disclaimer) : ''}
             </div>
+            <img class="about__app-icon" src="neko.png" alt="NEKO">
           </div>
         </div>
       </div>`;
@@ -116,6 +137,21 @@ Views.settings = {
       App.savePrefs();
       App.applyTheme();
     }));
+    $$('[data-option]', root).forEach((input) => input.addEventListener('change', () => {
+      const pack = Theme.pack.id;
+      App.prefs.themeOptions = { ...App.prefs.themeOptions, [pack]: { ...App.prefs.themeOptions[pack], [input.dataset.option]: input.checked } };
+      App.savePrefs();
+      App.reloadTheme();
+    }));
+    $('#newTheme', root).addEventListener('click', async () => {
+      const name = await promptModal({ title: 'New theme', label: 'Name', value: 'My theme', okLabel: 'Create', hint: 'Starts from the Default theme. You can change everything in the editor.' });
+      if (name) Views.settings.openEditorFor(await italeem.createTheme({ name }));
+    });
+    $('#editTheme', root).addEventListener('click', async () => {
+      if (!Theme.pack.locked) return Views.settings.openEditorFor(Theme.pack.id);
+      const name = await promptModal({ title: `Customize ${Theme.pack.name}`, label: 'Name for your copy', value: `My ${Theme.pack.name}`, okLabel: 'Make a copy', hint: "Built-in themes can't be changed, so you'll edit a copy." });
+      if (name) Views.settings.openEditorFor(await italeem.createTheme({ name, from: Theme.pack.id }));
+    });
     $('#openDl', root).addEventListener('click', () => italeem.openDownloads());
     $('#logout', root).addEventListener('click', () => App.signOut());
   },

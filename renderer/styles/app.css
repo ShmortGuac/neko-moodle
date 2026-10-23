@@ -384,6 +384,7 @@ body:not(.has-stripes) .stripes, body:not(.has-stars) .stars { display: none; }
 .about { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
 .about__links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .about__text { white-space: pre-line; }
+.about img.about__app-icon { width: 72px; height: 72px; border-radius: 0; border: 0; box-shadow: none; object-fit: contain; }
 .about img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-2); box-shadow: var(--shadow-sm); }
 
 /* ---------- States ---------- */
@@ -440,6 +441,14 @@ body:not(.has-stripes) .stripes, body:not(.has-stars) .stars { display: none; }
 .spinner { width: var(--spinner-size, 44px); height: var(--spinner-size, 44px); border-radius: 50%; border: 4px solid var(--spinner-track, var(--accent-soft)); border-top-color: var(--spinner, var(--primary)); animation: spin 0.9s linear infinite; }
 .empty__icon { width: 56px; height: 56px; margin-bottom: 6px; border-radius: var(--radius-sm); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
 .empty__icon svg { width: 28px; height: 28px; }
+
+/* ---------- Modal ---------- */
+.modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: rgba(10, 10, 20, 0.45); animation: fadeup 0.15s ease both; }
+.modal__box { width: min(420px, calc(100% - 40px)); padding: 24px; display: grid; gap: 14px; }
+.modal__box h3 { margin: 0; font-size: 18px; }
+.modal__box .field span { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.modal__hint { margin: -6px 0 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* ---------- Theme picker ---------- */
 .theme-pack + .theme-pack { margin-top: 22px; }

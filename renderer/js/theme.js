@@ -62,15 +62,18 @@ const THEME_DEFAULTS = {
     },
     elements: [],
   },
-  courseCard: { overlay: null, overlayFit: 'cover', overlayPosition: 'center', imageBlend: 'tint', palette: [] },
+  courseCard: { overlay: null, overlayFit: 'cover', overlayPosition: 'center', overlayOpacity: 1, imageBlend: 'tint', palette: [] },
   courseBanner: { mascots: [] },
   states: { empty: null, emptyWidth: 120, error: null },
   about: '',
   aboutImage: null,
   links: [],
+  options: [],
 };
 
+const OPTION_ID = /^[a-z0-9][a-z0-9-]*$/i;
 const ASSET_PATH = /\.(png|jpe?g|gif|webp|svg|avif|apng|woff2?|ttf|otf)$/i;
+// Which point of an element sits at its x/y. Values are the translate() offsets in %.
 const ALIGN = {
   'top-left': [0, 0], top: [-50, 0], 'top-right': [-100, 0],
   left: [0, -50], center: [-50, -50], right: [-100, -50],
@@ -95,6 +98,10 @@ const Theme = {
   pack: null,
   variant: null,
   cfg: deepMerge(THEME_DEFAULTS),
+  options: [],
+  // Set by the theme editor: don't touch the startup cache, and use unsaved CSS instead of theme.css.
+  editorMode: false,
+  draftCss: null,
 
   async load() {
     Theme.packs = await italeem.listThemes();
@@ -119,13 +126,23 @@ const Theme = {
     return value;
   },
 
-  apply(packId, variantId) {
+  // optionValues: the user's saved toggles for this pack, { [optionId]: true/false }.
+  apply(packId, variantId, optionValues = {}) {
     const { pack, variant } = Theme.find(packId, variantId);
     const { variants, id, hasCss, ...packCfg } = pack;
     const { id: _v, name: _n, subtitle: _s, preview: _p, swatches: _w, ...variantCfg } = variant;
     Theme.pack = pack;
     Theme.variant = variant;
-    Theme.cfg = Theme.resolveAssets(pack, deepMerge(THEME_DEFAULTS, packCfg, variantCfg));
+
+    // Theme options are toggles that layer extra settings on top ("on" / "off").
+    let merged = deepMerge(THEME_DEFAULTS, packCfg, variantCfg);
+    const options = (merged.options || []).filter((o) => o && OPTION_ID.test(o.id || ''));
+    Theme.options = options.map((o) => ({ ...o, value: optionValues[o.id] ?? o.default !== false }));
+    for (const o of Theme.options) {
+      const { options: _ignored, ...layer } = (o.value ? o.on : o.off) || {};
+      merged = deepMerge(merged, layer);
+    }
+    Theme.cfg = Theme.resolveAssets(pack, merged);
     const cfg = Theme.cfg;
 
     const vars = { ...cfg.tokens };
@@ -158,14 +175,25 @@ const Theme = {
       ...palette.map(([a, b], i) => `.pal-${i}{--c1:${a};--c2:${b};}`),
     ].join('\n');
     Theme.setTokens(css);
-    try {
-      localStorage.setItem('themeCache', css);
-    } catch {
-      // only used to avoid a colour flash on the next launch
+    if (!Theme.editorMode) {
+      try {
+        localStorage.setItem('themeCache', css);
+      } catch {
+        // only used to avoid a colour flash on the next launch
+      }
     }
 
     let link = document.getElementById('theme-css');
-    if (hasCss) {
+    if (Theme.draftCss !== null) {
+      link?.remove();
+      let style = document.getElementById('theme-draft-css');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'theme-draft-css';
+        document.head.append(style);
+      }
+      style.textContent = Theme.draftCss;
+    } else if (hasCss) {
       if (!link) {
         link = document.createElement('link');
         link.id = 'theme-css';
@@ -182,6 +210,9 @@ const Theme = {
     root.dataset.theme = pack.id;
     root.dataset.variant = variant.id;
     root.classList.toggle('has-motif', Boolean(cfg.motif));
+    // opt-<id> classes let theme.css react to options
+    [...root.classList].filter((c) => c.startsWith('opt-')).forEach((c) => root.classList.remove(c));
+    Theme.options.filter((o) => o.value).forEach((o) => root.classList.add(`opt-${o.id}`));
   },
 
   setTokens(css) {
@@ -235,7 +266,7 @@ const cssLen = (v, unit = '%') => (typeof v === 'number' ? `${v}${unit}` : v);
 // Renders theme elements: [{ type: "image" | "text", x, y, width, height, align, rotate, ... }].
 // x / y / width / height are % of the container (numbers) or any CSS length (strings).
 function elementsHTML(list = [], vars = {}) {
-  return list.map((el) => {
+  return list.map((el, i) => {
     const [ax, ay] = ALIGN[el.align] || ALIGN.center;
     const style = [
       el.x !== undefined && `left:${cssLen(el.x)}`,
@@ -258,11 +289,11 @@ function elementsHTML(list = [], vars = {}) {
         el.direction === 'vertical' && 'writing-mode:vertical-rl',
         el.textAlign && `text-align:${el.textAlign}`,
       );
-      return `<div class="el el--text ${anim}" style="${esc(style.filter(Boolean).join(';'))}">${esc(fill(el.text, vars))}</div>`;
+      return `<div class="el el--text ${anim}" data-el="${i}" style="${esc(style.filter(Boolean).join(';'))}">${esc(fill(el.text, vars))}</div>`;
     }
     const sized = el.width !== undefined && el.height !== undefined ? 'el--wh' : el.height !== undefined ? 'el--h' : 'el--w';
     const imgStyle = [el.fit && `object-fit:${el.fit}`, el.dropShadow && `filter:drop-shadow(${el.dropShadow})`].filter(Boolean).join(';');
-    return `<div class="el el--image ${sized} ${el.fade ? `el--fade-${el.fade}` : ''}" style="${esc(style.filter(Boolean).join(';'))}">`
+    return `<div class="el el--image ${sized} ${el.fade ? `el--fade-${el.fade}` : ''}" data-el="${i}" style="${esc(style.filter(Boolean).join(';'))}">`
       + `<img class="${anim}" src="${esc(el.src)}" alt="" style="${esc(imgStyle)}"></div>`;
   }).join('');
 }

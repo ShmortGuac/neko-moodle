@@ -3,7 +3,7 @@
 const italeem = Object.fromEntries(
   Object.entries(window.italeemBridge).map(([name, fn]) => [
     name,
-    async (...args) => {
+    name.startsWith('on') ? fn : async (...args) => {
       const res = await fn(...args);
       if (!res.ok) {
         const err = new Error(res.error);

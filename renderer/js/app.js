@@ -28,7 +28,7 @@ const App = {
   },
 
   applyTheme() {
-    Theme.apply(App.prefs.theme, App.prefs.variant);
+    Theme.apply(App.prefs.theme, App.prefs.variant, App.prefs.themeOptions[App.prefs.theme]);
     const body = document.body;
     const { decorations, sidebar } = Theme.cfg;
     const watermark = decorations.watermark || '';
@@ -64,6 +64,15 @@ const App = {
       return;
     }
     App.applyTheme();
+    // The theme editor saved something: reload packs and redraw.
+    italeem.onThemesChanged(async () => {
+      await Theme.load();
+      if (App.user) App.reloadTheme();
+      else {
+        App.applyTheme();
+        if ($('.login')) App.showLogin();
+      }
+    });
     $('#app').innerHTML = loadingHTML('boot');
     try {
       const user = await italeem.restore();
@@ -296,7 +305,7 @@ const App = {
 };
 
 function loadPrefs() {
-  const defaults = { theme: 'default', variant: 'light', mascot: true, watermark: true, site: '', username: '', courseFilter: 'current' };
+  const defaults = { theme: 'default', variant: 'light', mascot: true, watermark: true, themeOptions: {}, site: '', username: '', courseFilter: 'current' };
   let saved = {};
   try {
     saved = JSON.parse(localStorage.getItem('prefs') || '{}');
@@ -315,10 +324,11 @@ function loadPrefs() {
   return { ...defaults, ...saved };
 }
 
-// Brand tile: the site's logo, else the theme's motif, else a generic icon.
+// Brand tile: the site's logo, else the theme's motif, else NEKO's own icon.
 function brandTileHTML(profile = Site.current()) {
-  if (profile?.logo) return `<div class="brandmark__icon brandmark__icon--logo"><img src="${esc(profile.logo)}" alt=""></div>`;
-  return `<div class="brandmark__icon">${Theme.cfg.motif ? motifHTML() : Icons.book}</div>`;
+  const logo = profile?.logo || (!Theme.cfg.motif && 'neko.png');
+  if (logo) return `<div class="brandmark__icon brandmark__icon--logo"><img src="${esc(logo)}" alt=""></div>`;
+  return `<div class="brandmark__icon">${motifHTML()}</div>`;
 }
 
 // ---------- Shared UI pieces ----------
@@ -332,7 +342,7 @@ App.ui = {
         <div class="course-card__cover ${palette(c.id)} ${overlay ? 'course-card__cover--overlay' : ''}">
           ${c._image ? `<img class="course-card__img" src="${esc(c._image)}" alt="" loading="lazy" data-fallback>` : ''}
           ${overlay
-            ? `<img class="course-card__overlay" src="${esc(overlay)}" alt="" style="${esc(`object-fit:${cardCfg.overlayFit};object-position:${cardCfg.overlayPosition}`)}">`
+            ? `<img class="course-card__overlay" src="${esc(overlay)}" alt="" style="${esc(`object-fit:${cardCfg.overlayFit};object-position:${cardCfg.overlayPosition};opacity:${cardCfg.overlayOpacity ?? 1}`)}">`
             : motifHTML('course-card__motif')}
           <span class="course-card__short">${esc(courseTag(c))}</span>
         </div>

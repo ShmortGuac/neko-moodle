@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; img-src 'self' https: data: theme:; style-src 'self' 'unsafe-inline' theme: https://fonts.googleapis.com; font-src theme: https://fonts.gstatic.com; connect-src 'none'">
+  <title>Theme editor</title>
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/editor.css">
+</head>
+<body class="editor-body">
+  <div class="ed">
+    <aside class="ed-panel" id="edPanel"></aside>
+    <section class="ed-stage">
+      <div class="ed-stagebar" id="edStageBar"></div>
+      <div class="ed-canvas" id="edCanvas">
+        <!-- The preview: the app's real pages at 1320×840, scaled to fit -->
+        <div class="ed-viewport" id="edViewport">
+          <div class="backdrop" aria-hidden="true">
+            <div class="watermark"></div>
+            <div class="stripes stripes--tr"></div>
+            <div class="stripes stripes--bl"></div>
+            <div class="stars"></div>
+          </div>
+          <main id="app"></main>
+          <div id="toasts" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/site.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/views/login.js"></script>
+  <script src="js/views/dashboard.js"></script>
+  <script src="js/views/courses.js"></script>
+  <script src="js/views/course.js"></script>
+  <script src="js/views/deadlines.js"></script>
+  <script src="js/views/settings.js"></script>
+  <script src="js/editor/preview-data.js"></script>
+  <script src="js/editor/schema.js"></script>
+  <script src="js/editor/fields.js"></script>
+  <script src="js/editor/color-picker.js"></script>
+  <script src="js/editor/transform.js"></script>
+  <script src="js/editor/editor.js"></script>
+  <script src="js/editor/boot.js"></script>
+</body>
+</html>

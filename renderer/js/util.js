@@ -135,3 +135,32 @@ function errorHTML(err) {
       </div>
     </div></div>`;
 }
+
+// A small text prompt (window.prompt doesn't exist in Electron). Resolves to the text, or null.
+function promptModal({ title, label = '', value = '', okLabel = 'OK', hint = '' }) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal';
+    wrap.innerHTML = `
+      <form class="modal__box card">
+        <h3>${esc(title)}</h3>
+        ${hint ? `<p class="modal__hint">${esc(hint)}</p>` : ''}
+        <label class="field"><span>${esc(label)}</span><input class="input" name="value" value="${esc(value)}" required></label>
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" data-cancel>Cancel</button>
+          <button class="btn btn--primary">${esc(okLabel)}</button>
+        </div>
+      </form>`;
+    const close = (result) => { wrap.remove(); resolve(result); };
+    wrap.querySelector('form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      close(wrap.querySelector('input').value.trim() || null);
+    });
+    wrap.querySelector('[data-cancel]').addEventListener('click', () => close(null));
+    wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(null); });
+    document.body.append(wrap);
+    const input = wrap.querySelector('input');
+    input.focus();
+    input.select();
+  });
+}
