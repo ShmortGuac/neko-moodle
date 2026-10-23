@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, session: electronSession, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const moodle = require('./src/moodle');
@@ -13,7 +13,12 @@ const ICON = path.join(__dirname, process.platform === 'win32' ? 'build/icon.ico
 
 let win = null;
 let editorWin = null;
+let webWin = null;
 let client = null;
+let lastAutologin = 0;
+
+const WEB_PARTITION = 'persist:moodle';
+const AUTOLOGIN_GAP_MS = 6 * 60 * 1000; // Moodle's default minimum time between autologin keys
 
 const webPreferences = () => ({
   preload: path.join(__dirname, 'preload.js'),
@@ -22,10 +27,11 @@ const webPreferences = () => ({
   nodeIntegration: false,
 });
 
-// Links never navigate an app window; they open in the real browser.
+// Links never navigate an app window. Moodle pages open in NEKO's in-app window, anything else in the browser.
 function guardNavigation(w) {
   w.webContents.setWindowOpenHandler(({ url }) => {
-    openExternal(url);
+    if (client?.isOwnUrl(url)) openWeb(url);
+    else openExternal(url);
     return { action: 'deny' };
   });
   w.webContents.on('will-navigate', (e, url) => {
@@ -102,6 +108,54 @@ function openEditor(themeId) {
   editorWin.on('closed', () => { editorWin = null; });
 }
 
+// In-app window for Moodle pages NEKO doesn't show natively yet. It keeps its own signed-in session
+// (cookies persist), and signs itself in with a one-time autologin link when Moodle asks for a login.
+function openWeb(url) {
+  if (!client?.isOwnUrl(url)) return openExternal(url);
+  if (!webWin || webWin.isDestroyed()) {
+    webWin = new BrowserWindow({
+      width: 1180,
+      height: 860,
+      minWidth: 700,
+      minHeight: 500,
+      title: 'NEKO',
+      icon: ICON,
+      autoHideMenuBar: true,
+      backgroundColor: '#ffffff',
+      webPreferences: { partition: WEB_PARTITION, contextIsolation: true, sandbox: true, nodeIntegration: false },
+    });
+    const wc = webWin.webContents;
+    wc.setWindowOpenHandler(({ url: u }) => {
+      if (client?.isOwnUrl(u)) webWin.loadURL(u);
+      else openExternal(u);
+      return { action: 'deny' };
+    });
+    const onNav = (_e, u, _inPlace, isMainFrame) => { if (isMainFrame !== false) autologinIfAsked(u); };
+    wc.on('did-start-navigation', onNav);
+    wc.on('did-redirect-navigation', onNav);
+    webWin.on('closed', () => { webWin = null; });
+  }
+  webWin.target = url;
+  webWin.triedAutologin = false;
+  webWin.loadURL(url);
+  webWin.show();
+  webWin.focus();
+}
+
+async function autologinIfAsked(u) {
+  if (!webWin || webWin.triedAutologin || !client?.privatetoken || !client.isOwnUrl(u)) return;
+  if (!/\/login\/index\.php$/.test(new URL(u).pathname)) return;
+  if (Date.now() - lastAutologin < AUTOLOGIN_GAP_MS) return; // too soon: the user signs in on the page instead
+  webWin.triedAutologin = true;
+  lastAutologin = Date.now();
+  try {
+    const link = await client.autologinUrl(webWin.target);
+    if (webWin && !webWin.isDestroyed()) webWin.loadURL(link);
+  } catch (e) {
+    console.warn(`Autologin failed: ${e.message}`);
+  }
+}
+
 function broadcastThemesChanged() {
   for (const w of BrowserWindow.getAllWindows()) w.webContents.send('themes:changed');
 }
@@ -122,11 +176,12 @@ function requireClient() {
   return client;
 }
 
-async function establish(site, token) {
-  const c = new moodle.MoodleClient(site, token);
+async function establish(site, { token, privatetoken = null }) {
+  const c = new moodle.MoodleClient(site, token, privatetoken);
   const info = await c.call('core_webservice_get_site_info');
+  c.userid = info.userid;
   client = c;
-  await session.save({ site, token });
+  await session.save({ site, token, privatetoken });
   return {
     site,
     sitename: info.sitename,
@@ -142,21 +197,19 @@ handle('auth:public-config', async (site) => moodle.getPublicConfig(moodle.norma
 
 handle('auth:login', async ({ site, username, password }) => {
   const s = moodle.normalizeSite(site);
-  const token = await moodle.loginWithPassword(s, username, password);
-  return establish(s, token);
+  return establish(s, await moodle.loginWithPassword(s, username, password));
 });
 
 handle('auth:sso', async ({ site, launchurl }) => {
   const s = moodle.normalizeSite(site);
-  const token = await ssoLogin(win, s, launchurl);
-  return establish(s, token);
+  return establish(s, await ssoLogin(win, s, launchurl));
 });
 
 handle('auth:restore', async () => {
   const saved = await session.load();
   if (!saved) return null;
   try {
-    return await establish(saved.site, saved.token);
+    return await establish(saved.site, saved);
   } catch (err) {
     if (err.code === 'invalidtoken') {
       await session.clear();
@@ -169,7 +222,12 @@ handle('auth:restore', async () => {
 handle('auth:logout', async () => {
   client = null;
   await session.clear();
+  if (webWin && !webWin.isDestroyed()) webWin.destroy();
+  await electronSession.fromPartition(WEB_PARTITION).clearStorageData();
 });
+
+handle('ws:fetch-html', async (url) => requireClient().fetchHtml(url));
+handle('web:open', async (url) => openWeb(url));
 
 handle('ws:call', async (wsfunction, params) => {
   try {

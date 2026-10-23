@@ -164,3 +164,54 @@ function promptModal({ title, label = '', value = '', okLabel = 'OK', hint = '' 
     input.select();
   });
 }
+
+// Shows Moodle-authored HTML (pages, book chapters) in a locked-down frame: no scripts can run, links open
+// through NEKO, and it's styled with the current theme. It grows to fit its content.
+function mountHtml(container, html) {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
+  const css = `
+    html, body { margin: 0; background: transparent; color: ${v('--text', '#1d2033')}; font-family: ${v('--font', 'system-ui, sans-serif')};
+      font-size: 15px; line-height: 1.65; overflow-wrap: anywhere; }
+    body > :first-child { margin-top: 0; } body > :last-child { margin-bottom: 0; }
+    a { color: ${v('--accent', '#1f9e93')}; font-weight: 600; }
+    img, video, iframe { max-width: 100%; height: auto; border-radius: 8px; }
+    table { border-collapse: collapse; display: block; max-width: 100%; overflow-x: auto; }
+    td, th { border: 1px solid ${v('--border', '#ddd')}; padding: 6px 10px; text-align: left; }
+    pre, code { background: ${v('--surface-2', '#f5f5f5')}; border-radius: 6px; font-family: Consolas, monospace; font-size: 13px; }
+    code { padding: 1px 5px; } pre { padding: 12px 14px; overflow: auto; }
+    h1, h2, h3, h4 { line-height: 1.25; font-family: ${v('--font-heading', v('--font', 'inherit'))}; }
+    blockquote { margin: 0; padding: 2px 0 2px 14px; border-left: 3px solid ${v('--accent', '#1f9e93')}; color: ${v('--text-muted', '#666')}; }
+    hr { border: 0; border-top: 1px solid ${v('--border', '#ddd')}; }`;
+  const frame = document.createElement('iframe');
+  frame.className = 'html-frame';
+  // allow-same-origin only lets NEKO measure the height; with scripts off, the content can't use it.
+  frame.setAttribute('sandbox', 'allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+  frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>${css}</style></head><body>${html}</body></html>`;
+  // Resize on the next frame (not inside the observer callback) and only when the height really changed.
+  let pending = 0;
+  const fit = () => {
+    cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(() => {
+      try {
+        const h = `${frame.contentDocument.documentElement.scrollHeight}px`;
+        if (frame.style.height !== h) frame.style.height = h;
+      } catch {
+        // frame gone
+      }
+    });
+  };
+  // Re-measure when the content, its images or fonts finish loading, and when the window resizes.
+  frame.addEventListener('load', () => {
+    fit();
+    const doc = frame.contentDocument;
+    doc.querySelectorAll('img, video').forEach((m) => {
+      m.addEventListener('load', fit);
+      m.addEventListener('loadedmetadata', fit);
+    });
+    doc.fonts?.ready.then(fit);
+  });
+  const onResize = () => (frame.isConnected ? fit() : window.removeEventListener('resize', onResize));
+  window.addEventListener('resize', onResize);
+  container.replaceChildren(frame);
+}

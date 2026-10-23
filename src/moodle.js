@@ -82,15 +82,17 @@ async function getPublicConfig(site) {
 
 async function loginWithPassword(site, username, password) {
   const json = await postForm(`${site}/login/token.php`, { username, password, service: SERVICE });
-  if (json.token) return json.token;
+  if (json.token) return { token: json.token, privatetoken: json.privatetoken || null };
   throw new MoodleError(json.error || 'Login failed.', json.errorcode);
 }
 
 class MoodleClient {
-  constructor(site, token) {
+  constructor(site, token, privatetoken = null) {
     this.site = site;
     this.token = token;
+    this.privatetoken = privatetoken;
     this.origin = new URL(site).origin;
+    this.userid = null;
   }
 
   async call(wsfunction, params = {}) {
@@ -106,6 +108,43 @@ class MoodleClient {
     } catch {
       return false;
     }
+  }
+
+  // A one-time link that signs the in-app browser in and then goes to `target` (Moodle's "autologin").
+  // Needs the private token from sign-in; Moodle rate-limits it (default: once every 6 minutes).
+  async autologinUrl(target) {
+    if (!this.privatetoken) throw new MoodleError('No private token: sign out and in again to enable in-app sign-in.', 'noprivatetoken');
+    const { key, autologinurl } = await this.call('tool_mobile_get_autologin_key', { privatetoken: this.privatetoken });
+    const u = new URL(autologinurl);
+    u.searchParams.set('userid', this.userid);
+    u.searchParams.set('key', key);
+    u.searchParams.set('urltogo', target);
+    return u.toString();
+  }
+
+  // Fetches an activity's HTML file (a page, a book chapter) and points its images at the tokenised
+  // file URLs so they load. Links keep plain URLs so the token never ends up in a browser.
+  async fetchHtml(url) {
+    if (!this.isOwnUrl(url)) throw new MoodleError('Refusing to fetch from outside your Moodle site.');
+    let res;
+    try {
+      res = await fetch(this.tokenize(url), { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    } catch (e) {
+      throw new MoodleError(`Could not reach the server (${e.cause?.code || e.name}).`, 'network');
+    }
+    if (!res.ok) throw new MoodleError(`Server responded with ${res.status}.`, 'http');
+    const html = await res.text();
+    return html.replace(/(\s(src|href|poster)\s*=\s*)(["'])(.*?)\3/gi, (match, pre, attr, q, value) => {
+      if (/^(#|mailto:|data:|javascript:)/i.test(value)) return match;
+      let abs;
+      try {
+        abs = new URL(value.replace(/&amp;/g, '&'), url).toString();
+      } catch {
+        return match;
+      }
+      if (attr.toLowerCase() !== 'href' && this.isOwnUrl(abs) && abs.includes('/pluginfile.php')) abs = this.tokenize(abs);
+      return `${pre}${q}${abs.replace(/&/g, '&amp;')}${q}`;
+    });
   }
 
   // Files on Moodle need the token and the webservice pluginfile endpoint.

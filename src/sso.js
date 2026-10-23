@@ -46,9 +46,9 @@ function ssoLogin(parent, site, launchUrl) {
       try {
         const payload = decodeURIComponent(target.slice(`${SCHEME}://`.length).replace(/^token=/, ''));
         // Format: base64("signature:::token:::privatetoken")
-        const [, token] = Buffer.from(payload, 'base64').toString('utf8').split(':::');
+        const [, token, privatetoken] = Buffer.from(payload, 'base64').toString('utf8').split(':::');
         if (!token) throw new MoodleError('The site did not return a login token.');
-        finish(null, token);
+        finish(null, { token, privatetoken: privatetoken || null });
       } catch (e) {
         finish(e);
       }

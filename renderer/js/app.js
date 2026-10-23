@@ -201,6 +201,17 @@ const App = {
     App.getEvents().then(App.updateBadge).catch(() => {});
   },
 
+  // Moodle pages open in NEKO's in-app window (already signed in); other websites in the browser.
+  openUrl(url) {
+    let own = false;
+    try {
+      own = Boolean(App.user) && new URL(url).origin === new URL(App.user.site).origin;
+    } catch {
+      // not a valid URL
+    }
+    return (own ? neko.openWeb(url) : neko.openExternal(url)).catch((e) => toast('Could not open', { type: 'error', message: e.message }));
+  },
+
   // ---------- Data ----------
   call(wsfunction, params) {
     return neko.call(wsfunction, params);
@@ -218,6 +229,14 @@ const App = {
     list.sort((a, b) => (b.lastaccess || 0) - (a.lastaccess || 0));
     App.cache.courses = list;
     return list;
+  },
+
+  async getCourseContents(courseid, force = false) {
+    App.cache.contents ||= {};
+    if (force || !App.cache.contents[courseid]) {
+      App.cache.contents[courseid] = await App.call('core_course_get_contents', { courseid });
+    }
+    return App.cache.contents[courseid];
   },
 
   // Upcoming action events (assignments, quizzes...). Includes the last 2 weeks so overdue items show.
@@ -288,7 +307,7 @@ const App = {
       const link = e.target.closest('[data-url]');
       if (link) {
         e.preventDefault();
-        if (link.dataset.url) neko.openExternal(link.dataset.url);
+        if (link.dataset.url) App.openUrl(link.dataset.url);
         return;
       }
       const course = e.target.closest('[data-course]');

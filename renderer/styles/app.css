@@ -355,6 +355,21 @@ body:not(.has-stripes) .stripes, body:not(.has-stars) .stars { display: none; }
 .file__name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file__size { color: var(--text-muted); font-size: 12px; }
 
+/* ---------- Reader (pages, books) ---------- */
+.module__name--link { cursor: pointer; }
+.module__name--link:hover { color: var(--primary); text-decoration: underline; }
+.reader__body { padding: 28px 34px 32px; }
+.html-frame { display: block; width: 100%; min-height: 40px; border: 0; background: transparent; }
+.reader__chapter { margin: 0 0 16px; font-size: 22px; font-weight: 800; }
+.reader__nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border); }
+.reader__nav .btn { max-width: 48%; overflow: hidden; text-overflow: ellipsis; }
+.book { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 20px; align-items: start; }
+.book__toc { position: sticky; top: 0; padding: 14px 8px; display: grid; gap: 2px; max-height: calc(100vh - 140px); overflow-y: auto; }
+.book__toc-title { padding: 0 12px 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.book__chapter { border: 0; background: transparent; text-align: left; padding: 8px 12px; border-radius: var(--radius-sm); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; }
+.book__chapter:hover { background: var(--surface-2); }
+.book__chapter.is-active { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+
 /* ---------- Settings ---------- */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }

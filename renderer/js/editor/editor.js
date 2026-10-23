@@ -74,6 +74,9 @@ const Editor = {
     App.downloadFile = async () => toast('Preview only', { message: 'Downloads are off in the theme editor.' });
     App.signOut = async () => toast('Preview only', { message: 'Signing out is off in the theme editor.' });
     neko.download = previewOnly('Downloading');
+    neko.openWeb = async () => toast('Preview only', { message: 'Moodle pages open in an in-app window in the real app.' });
+    neko.fetchHtml = async (url) => PreviewData.html(url);
+    App.getCourseContents = async () => PreviewData.contents();
     neko.login = previewOnly('Signing in');
     neko.loginSSO = previewOnly('Signing in');
     neko.createTheme = previewOnly('Creating themes');

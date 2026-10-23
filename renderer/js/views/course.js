@@ -14,7 +14,7 @@ Views.course = {
     root.innerHTML = loadingHTML('course');
     const [courses, sections] = await Promise.all([
       App.getCourses(),
-      App.call('core_course_get_contents', { courseid: params.id }),
+      App.getCourseContents(params.id, params.force),
     ]);
     if (!ctx.isCurrent()) return;
 
@@ -57,6 +57,10 @@ Views.course = {
             <span class="file__size">${fmtSize(f.filesize)}</span>
             <button class="btn btn--ghost btn--sm btn--icon" style="width:30px;height:30px" title="Download" data-dl="${indices[k]}">${Icons.download}</button>
           </div>`).join('')}</div>`;
+      } else if (NATIVE_MODS.has(m.modname)) {
+        const desc = stripHtml(m.description);
+        if (desc) meta = `${meta} · ${desc.length > 110 ? desc.slice(0, 110) + '…' : desc}`;
+        actions = `<button class="btn btn--primary btn--sm" data-activity="${m.id}">${Icons.book} Read</button>`;
       } else if (m.modname === 'url') {
         const target = (m.contents || [])[0]?.fileurl || m.url;
         meta = 'Link';
@@ -73,7 +77,7 @@ Views.course = {
         <div class="module ${hidden ? 'is-hidden' : ''}">
           <div class="module__icon">${icon}</div>
           <div style="min-width:0">
-            <div class="module__name">${esc(stripHtml(m.name))}</div>
+            <div class="module__name ${NATIVE_MODS.has(m.modname) && !hidden ? 'module__name--link' : ''}" ${NATIVE_MODS.has(m.modname) && !hidden ? `data-activity="${m.id}"` : ''}>${esc(stripHtml(m.name))}</div>
             <div class="module__meta">${esc(meta)}</div>
           </div>
           <div class="module__actions">${actions}</div>
@@ -116,6 +120,8 @@ Views.course = {
       <div class="sections">${sectionsHTML || emptyHTML('This course is empty', 'Your lecturer has not added anything yet.')}</div>`;
 
     root.addEventListener('click', (e) => {
+      const activity = e.target.closest('[data-activity]');
+      if (activity) return App.navigate('activity', { courseId: course.id, cmid: Number(activity.dataset.activity) });
       const summary = e.target.closest('.section__summary');
       if (summary && !e.target.closest('[data-url]')) summary.classList.toggle('is-open');
       const one = e.target.closest('[data-dl]');

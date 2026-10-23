@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('nekoBridge', {
 
   call: call('ws:call'),
   tokenize: call('ws:tokenize'),
+  fetchHtml: call('ws:fetch-html'),
+  openWeb: call('web:open'),
 
   download: call('file:download'),
   openPath: call('file:open'),
