@@ -1,0 +1,14 @@
+{
+  "name": "italeem-desktop",
+  "productName": "i-Taleem Desktop",
+  "version": "0.1.0",
+  "description": "Unofficial Minato Aqua themed desktop client for i-Taleem (Moodle)",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^45.0.0"
+  }
+}
