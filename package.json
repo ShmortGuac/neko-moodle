@@ -6,9 +6,59 @@
   "main": "main.js",
   "private": true,
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never"
   },
   "devDependencies": {
-    "electron": "^45.0.0"
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0"
+  },
+  "author": {
+    "name": "ShmortGuac"
+  },
+  "repository": "github:ShmortGuac/neko-moodle",
+  "build": {
+    "appId": "io.github.shmortguac.neko",
+    "productName": "NEKO",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": false,
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "src/**",
+      "renderer/**",
+      "build/icon.*",
+      "themes/README.md",
+      "themes/default-light/**",
+      "themes/default-dark/**"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "NEKO-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "NEKO-${version}-portable.${ext}"
+    }
   }
 }
