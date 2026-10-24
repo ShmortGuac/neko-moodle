@@ -60,7 +60,10 @@ Views.course = {
       } else if (NATIVE_MODS.has(m.modname)) {
         const desc = stripHtml(m.description);
         if (desc) meta = `${meta} · ${desc.length > 110 ? desc.slice(0, 110) + '…' : desc}`;
-        actions = `<button class="btn btn--primary btn--sm" data-activity="${m.id}">${Icons.book} Read</button>`;
+        const openIcon = { forum: Icons.chat, assign: Icons.upload }[m.modname];
+        actions = openIcon
+          ? `<button class="btn btn--primary btn--sm" data-activity="${m.id}">${openIcon} Open</button>`
+          : `<button class="btn btn--primary btn--sm" data-activity="${m.id}">${Icons.book} Read</button>`;
       } else if (m.modname === 'url') {
         const target = (m.contents || [])[0]?.fileurl || m.url;
         meta = 'Link';

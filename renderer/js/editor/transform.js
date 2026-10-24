@@ -233,7 +233,7 @@ const Transform = {
     const list = clone(Editor.valueOf(sel.path)) || [];
     list.splice(sel.index, 1);
     Editor.selected = null;
-    Editor.setValue(sel.path, list.length ? list : undefined, false, { structural: true });
+    Editor.setValue(sel.path, list.length ? list : undefined, { structural: true });
     Editor.renderPanel();
     return true;
   },

@@ -44,15 +44,14 @@ const attr = (v) => esc(v ?? '');
 
 const Fields = {
   // ---------- helpers ----------
-  bind(path, kind, abs) {
-    return `data-bind="${attr(path)}" data-kind="${kind}"${abs ? ' data-abs' : ''}`;
+  bind(path, kind) {
+    return `data-bind="${attr(path)}" data-kind="${kind}"`;
   },
 
-  wrap(def, inner, { scope = true } = {}) {
-    const chip = scope && !def.abs ? Editor.scopeChipHTML(def.path) : '';
+  wrap(def, inner) {
     return `
       <div class="ed-field" data-field="${attr(def.path)}">
-        <div class="ed-field__head"><label>${esc(def.label)}</label>${chip}</div>
+        <div class="ed-field__head"><label>${esc(def.label)}</label></div>
         ${inner}
         ${def.hint ? `<div class="ed-hint">${esc(def.hint)}</div>` : ''}
       </div>`;
@@ -64,7 +63,7 @@ const Fields = {
   },
 
   value(def) {
-    return def.abs ? getPath(Editor.draft, def.path) : Editor.valueOf(def.path);
+    return Editor.valueOf(def.path);
   },
 
   // ---------- simple types ----------
@@ -73,43 +72,43 @@ const Fields = {
   },
 
   type_text(def) {
-    return Fields.wrap(def, `<input class="ed-input" ${Fields.bind(def.path, 'text', def.abs)} value="${attr(Fields.value(def))}" placeholder="${attr(def.placeholder || Editor.defaultOf(def.path) || '')}" spellcheck="false">`);
+    return Fields.wrap(def, `<input class="ed-input" ${Fields.bind(def.path, 'text')} value="${attr(Fields.value(def))}" placeholder="${attr(def.placeholder || Editor.defaultOf(def.path) || '')}" spellcheck="false">`);
   },
 
   type_textarea(def) {
-    return Fields.wrap(def, `<textarea class="ed-input ed-textarea" ${Fields.bind(def.path, 'text', def.abs)} rows="4">${esc(Fields.value(def) ?? '')}</textarea>`);
+    return Fields.wrap(def, `<textarea class="ed-input ed-textarea" ${Fields.bind(def.path, 'text')} rows="4">${esc(Fields.value(def) ?? '')}</textarea>`);
   },
 
   type_number(def) {
     const v = Fields.value(def);
-    return Fields.wrap(def, `<input class="ed-input" type="number" ${Fields.bind(def.path, 'number', def.abs)} value="${attr(v)}" placeholder="${attr(Editor.defaultOf(def.path))}"
+    return Fields.wrap(def, `<input class="ed-input" type="number" ${Fields.bind(def.path, 'number')} value="${attr(v)}" placeholder="${attr(Editor.defaultOf(def.path))}"
       ${def.min !== undefined ? `min="${def.min}"` : ''} ${def.max !== undefined ? `max="${def.max}"` : ''} step="${def.step || 1}">`);
   },
 
   type_toggle(def) {
     const v = Fields.value(def);
-    return Fields.wrap(def, `<label class="ed-switch"><input type="checkbox" ${Fields.bind(def.path, 'bool', def.abs)} ${v ? 'checked' : ''}><i></i></label>`);
+    return Fields.wrap(def, `<label class="ed-switch"><input type="checkbox" ${Fields.bind(def.path, 'bool')} ${v ? 'checked' : ''}><i></i></label>`);
   },
 
   type_select(def) {
     const v = Fields.value(def) ?? Editor.defaultOf(def.path) ?? '';
-    return Fields.wrap(def, `<select class="ed-input" ${Fields.bind(def.path, 'text', def.abs)}>
+    return Fields.wrap(def, `<select class="ed-input" ${Fields.bind(def.path, 'text')}>
       ${def.options.map((o) => `<option value="${attr(o)}" ${String(v) === String(o) ? 'selected' : ''}>${esc(o || '(none)')}</option>`).join('')}
     </select>`);
   },
 
-  colorControl(path, value, { placeholder = '', abs = false } = {}) {
+  colorControl(path, value, { placeholder = '' } = {}) {
     return `
       <div class="ed-color">
-        <button class="ed-color__swatch" data-action="color-pick" data-path="${attr(path)}"${abs ? ' data-abs' : ''} title="Pick a colour">
+        <button class="ed-color__swatch" data-action="color-pick" data-path="${attr(path)}" title="Pick a colour">
           <i style="background:${attr(value || placeholder || 'transparent')}"></i>
         </button>
-        <input class="ed-input" ${Fields.bind(path, 'text', abs)} value="${attr(value)}" placeholder="${attr(placeholder || 'default')}" spellcheck="false">
+        <input class="ed-input" ${Fields.bind(path, 'text')} value="${attr(value)}" placeholder="${attr(placeholder || 'default')}" spellcheck="false">
       </div>`;
   },
 
   type_color(def) {
-    return Fields.wrap(def, Fields.colorControl(def.path, Fields.value(def), { placeholder: Editor.defaultOf(def.path), abs: def.abs }));
+    return Fields.wrap(def, Fields.colorControl(def.path, Fields.value(def), { placeholder: Editor.defaultOf(def.path) }));
   },
 
   type_length(def) {
@@ -118,8 +117,8 @@ const Fields = {
     const max = def.max || 48;
     return Fields.wrap(def, `
       <div class="ed-length">
-        <input type="range" min="0" max="${Math.min(max, 80)}" ${Fields.bind(def.path, 'px', def.abs)} value="${Number.isFinite(n) ? Math.min(n, 80) : 0}">
-        <input class="ed-input" ${Fields.bind(def.path, 'text', def.abs)} value="${attr(v)}" placeholder="${attr(Editor.defaultOf(def.path) || 'default')}">
+        <input type="range" min="0" max="${Math.min(max, 80)}" ${Fields.bind(def.path, 'px')} value="${Number.isFinite(n) ? Math.min(n, 80) : 0}">
+        <input class="ed-input" ${Fields.bind(def.path, 'text')} value="${attr(v)}" placeholder="${attr(Editor.defaultOf(def.path) || 'default')}">
       </div>`);
   },
 
@@ -129,38 +128,44 @@ const Fields = {
     const pct = v === undefined || v === null || v === '' ? 100 : Math.round(Number(v) * 100);
     return Fields.wrap(def, `
       <div class="ed-length ed-opacity">
-        <input type="range" min="0" max="100" ${Fields.bind(def.path, 'pct', def.abs)} value="${pct}">
-        <label class="ed-cp__pct"><input class="ed-input" type="number" min="0" max="100" ${Fields.bind(def.path, 'pct', def.abs)} value="${pct}">%</label>
+        <input type="range" min="0" max="100" ${Fields.bind(def.path, 'pct')} value="${pct}">
+        <label class="ed-cp__pct"><input class="ed-input" type="number" min="0" max="100" ${Fields.bind(def.path, 'pct')} value="${pct}">%</label>
       </div>`);
   },
 
   type_font(def) {
-    return Fields.wrap(def, `<input class="ed-input" list="ed-fonts" ${Fields.bind(def.path, 'text', def.abs)} value="${attr(Fields.value(def))}" placeholder="&quot;Segoe UI&quot;, system-ui, sans-serif" spellcheck="false">`);
+    return Fields.wrap(def, `<input class="ed-input" list="ed-fonts" ${Fields.bind(def.path, 'text')} value="${attr(Fields.value(def))}" placeholder="&quot;Segoe UI&quot;, system-ui, sans-serif" spellcheck="false">`);
   },
 
   type_lines(def) {
     const v = Fields.value(def);
-    return Fields.wrap(def, `<textarea class="ed-input ed-textarea" ${Fields.bind(def.path, 'lines', def.abs)} rows="5">${esc((Array.isArray(v) ? v : []).join('\n'))}</textarea>`);
+    return Fields.wrap(def, `<textarea class="ed-input ed-textarea" ${Fields.bind(def.path, 'lines')} rows="5">${esc((Array.isArray(v) ? v : []).join('\n'))}</textarea>`);
   },
 
   // ---------- images ----------
-  imageControl(path, value, { kind = 'image', abs = false } = {}) {
+  imageControl(path, value, { kind = 'image' } = {}) {
     const url = Editor.assetUrl(value);
     return `
       <div class="ed-image">
         <div class="ed-thumb">${url ? `<img src="${attr(url)}" alt="">` : '<span>none</span>'}</div>
         <div class="ed-image__side">
-          <input class="ed-input" ${Fields.bind(path, 'text', abs)} value="${attr(value)}" placeholder="assets/picture.png" spellcheck="false">
+          <input class="ed-input" ${Fields.bind(path, 'text')} value="${attr(value)}" placeholder="assets/picture.png" spellcheck="false">
           <div class="ed-row">
-            <button class="ed-btn ed-btn--sm" data-action="pick" data-path="${attr(path)}" data-asset="${kind}"${abs ? ' data-abs' : ''}>Choose…</button>
-            ${value ? `<button class="ed-btn ed-btn--sm ed-btn--ghost" data-action="clear" data-path="${attr(path)}"${abs ? ' data-abs' : ''}>Remove</button>` : ''}
+            <button class="ed-btn ed-btn--sm" data-action="pick" data-path="${attr(path)}" data-asset="${kind}">Choose…</button>
+            ${value ? `<button class="ed-btn ed-btn--sm ed-btn--ghost" data-action="clear" data-path="${attr(path)}">Remove</button>` : ''}
           </div>
         </div>
       </div>`;
   },
 
   type_image(def) {
-    return Fields.wrap(def, Fields.imageControl(def.path, Fields.value(def), { abs: def.abs }));
+    return Fields.wrap(def, Fields.imageControl(def.path, Fields.value(def)));
+  },
+
+  // The three dots on the theme's card in the picker.
+  type_swatches(def) {
+    const v = Fields.value(def) || [];
+    return Fields.wrap(def, `<div class="ed-grid3">${[0, 1, 2].map((k) => Fields.colorControl(`${def.path}.${k}`, v[k])).join('')}</div>`);
   },
 
   // ---------- background ----------
@@ -336,7 +341,7 @@ const Fields = {
             ${Fields.listButtons(def.path, i, list.length)}
           </div>`).join('')}
       </div>
-      <button class="ed-btn ed-btn--sm" data-action="add-font" data-path="${attr(def.path)}">+ Add font file…</button>`, { scope: true });
+      <button class="ed-btn ed-btn--sm" data-action="add-font" data-path="${attr(def.path)}">+ Add font file…</button>`);
   },
 
   type_options(def) {

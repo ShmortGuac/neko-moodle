@@ -3,17 +3,17 @@
 // the theme:// protocol, which can only read inside a theme's folder.
 //
 // Themes live in two places:
-//   <app>/themes        built in (Default is read-only)
+//   <app>/themes        built in (Default Light / Dark are read-only)
 //   <userData>/themes   made in the theme editor; wins over a built-in theme with the same id
 
-const { app, dialog, protocol, net } = require('electron');
+const { app, dialog, protocol, net, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 const BUILTIN_DIR = path.join(__dirname, '..', 'themes');
 const SITES_DIR = path.join(__dirname, '..', 'sites');
-const LOCKED = new Set(['default']);
+const LOCKED = new Set(['default-light', 'default-dark']);
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 const IMAGE_TYPES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const ASSET_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'apng', 'woff', 'woff2', 'ttf', 'otf'];
@@ -43,7 +43,7 @@ function listThemes() {
       if (!ID.test(id) || !fs.existsSync(manifest)) continue;
       try {
         const theme = readJson(manifest);
-        if (!Array.isArray(theme.variants) || !theme.variants.length) throw new Error('no variants');
+        if ('variants' in theme) throw new Error('uses the old "variants" format');
         found.set(id, {
           ...theme,
           id,
@@ -75,13 +75,13 @@ function readTheme(id) {
 function writableDir(id) {
   const dir = themeDir(id);
   if (!dir) throw new Error(`Theme "${id}" not found.`);
-  if (dir.startsWith(BUILTIN_DIR) && LOCKED.has(id)) throw new Error('The built-in Default theme can\'t be changed. Make a copy instead.');
+  if (dir.startsWith(BUILTIN_DIR) && LOCKED.has(id)) throw new Error('Built-in Default themes can\'t be changed. Make a copy instead.');
   return dir;
 }
 
 function saveTheme({ id, theme, css }) {
   const dir = writableDir(id);
-  if (!theme || !Array.isArray(theme.variants) || !theme.variants.length) throw new Error('A theme needs at least one variant.');
+  if (!theme || typeof theme !== 'object' || Array.isArray(theme) || 'variants' in theme) throw new Error('That isn\'t a valid theme.');
   fs.writeFileSync(path.join(dir, 'theme.json'), `${formatJson(theme)}\n`, 'utf8');
   const cssFile = path.join(dir, 'theme.css');
   if (typeof css === 'string') {
@@ -90,12 +90,76 @@ function saveTheme({ id, theme, css }) {
   }
 }
 
+const isPlainObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
+
+// Objects merge key by key; arrays and plain values replace (same rules as the renderer's theme engine).
+function deepMerge(...layers) {
+  const out = {};
+  for (const layer of layers) {
+    for (const [k, v] of Object.entries(layer || {})) {
+      out[k] = isPlainObject(v) && isPlainObject(out[k]) ? deepMerge(out[k], v) : v;
+    }
+  }
+  return out;
+}
+
+// Themes used to hold "variants" (e.g. Light / Dark) that each overrode the theme. Now one theme is
+// one look, so an old theme becomes one theme per variant, named "<theme> <variant>".
+// Returns [{ variant: <old variant id>, theme }].
+function splitVariants(theme) {
+  const { variants, ...base } = theme;
+  const { name: baseName, author, version, description, ...rest } = base;
+  return variants.map((v) => {
+    const { id, name, subtitle, preview, swatches, ...overrides } = v;
+    const head = {
+      name: variants.length > 1 ? `${baseName || 'Theme'} ${name || id}` : baseName,
+      author, version, description, subtitle, preview, swatches,
+    };
+    const flat = { ...Object.fromEntries(Object.entries(head).filter(([, x]) => x !== undefined)), ...deepMerge(rest, overrides) };
+    return { variant: String(id || ''), theme: flat };
+  });
+}
+
+// Splits old multi-variant themes in the user folder into separate themes (<id>-<variant>).
+// The original folder is kept in <userData>/themes-backup.
+function migrateUserThemes() {
+  const root = userDir();
+  if (!fs.existsSync(root)) return;
+  for (const id of fs.readdirSync(root)) {
+    const dir = path.join(root, id);
+    const manifest = path.join(dir, 'theme.json');
+    if (!ID.test(id) || !fs.existsSync(manifest)) continue;
+    try {
+      const theme = readJson(manifest);
+      if (!Array.isArray(theme.variants) || !theme.variants.length) continue;
+      const parts = splitVariants(theme);
+      if (parts.length === 1) {
+        fs.writeFileSync(manifest, `${formatJson(parts[0].theme)}\n`, 'utf8');
+        continue;
+      }
+      for (const part of parts) {
+        const base = `${id}-${slugify(part.variant)}`;
+        let newId = base;
+        for (let n = 2; themeDir(newId); n++) newId = `${base}-${n}`;
+        fs.cpSync(dir, path.join(root, newId), { recursive: true });
+        fs.writeFileSync(path.join(root, newId, 'theme.json'), `${formatJson(part.theme)}\n`, 'utf8');
+      }
+      const backup = path.join(app.getPath('userData'), 'themes-backup', id);
+      fs.rmSync(backup, { recursive: true, force: true });
+      fs.mkdirSync(path.dirname(backup), { recursive: true });
+      fs.renameSync(dir, backup);
+    } catch (e) {
+      console.warn(`Could not convert theme "${id}": ${e.message}`);
+    }
+  }
+}
+
 function slugify(name) {
   return String(name || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'theme';
 }
 
-// Copies an existing theme (default: the built-in Default) into the user folder under a new name.
-function createTheme({ name, from = 'default' }) {
+// Copies an existing theme (default: the built-in Default Light) into the user folder under a new name.
+function createTheme({ name, from = 'default-light' }) {
   const source = themeDir(from);
   if (!source) throw new Error(`Theme "${from}" not found.`);
   const base = slugify(name);
@@ -108,6 +172,14 @@ function createTheme({ name, from = 'default' }) {
   Object.assign(theme, { name: String(name || 'My theme').trim() || 'My theme', author: '', version: '1.0.0', description: '' });
   fs.writeFileSync(path.join(dest, 'theme.json'), `${formatJson(theme)}\n`, 'utf8');
   return id;
+}
+
+// Moves a theme the user made to the Recycle Bin. Built-in themes can't be deleted.
+async function deleteTheme(id) {
+  const dir = themeDir(id);
+  if (!dir) throw new Error(`Theme "${id}" not found.`);
+  if (!dir.startsWith(userDir() + path.sep)) throw new Error('Built-in themes can\'t be deleted.');
+  await shell.trashItem(dir);
 }
 
 // Lets the user pick an image or font and copies it into the theme's assets folder.
@@ -200,6 +272,6 @@ function handleProtocol() {
 }
 
 module.exports = {
-  listThemes, readTheme, saveTheme, createTheme, importAsset, themeDir,
+  listThemes, readTheme, saveTheme, createTheme, deleteTheme, importAsset, themeDir, migrateUserThemes, splitVariants, formatJson,
   listSites, registerScheme, handleProtocol,
 };

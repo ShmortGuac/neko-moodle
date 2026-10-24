@@ -6,6 +6,7 @@ const session = require('./src/session');
 const { ssoLogin } = require('./src/sso');
 const downloads = require('./src/downloads');
 const packs = require('./src/packs');
+const submissions = require('./src/submissions');
 
 packs.registerScheme();
 
@@ -227,6 +228,7 @@ handle('auth:logout', async () => {
 });
 
 handle('ws:fetch-html', async (url) => requireClient().fetchHtml(url));
+handle('ws:rewrite-html', async (html, base) => requireClient().rewriteHtml(html, base));
 handle('web:open', async (url) => openWeb(url));
 
 handle('ws:call', async (wsfunction, params) => {
@@ -259,6 +261,10 @@ handle('file:open-downloads', async () => {
 
 handle('shell:open', async (url) => openExternal(url));
 
+handle('submit:pick', async (opts) => submissions.pick(win, opts));
+handle('submit:dropped', async (paths) => submissions.register(Array.isArray(paths) ? paths.filter((p) => typeof p === 'string' && p) : []));
+handle('submit:save', async (data) => submissions.save(requireClient(), data));
+
 handle('themes:list', async () => packs.listThemes());
 handle('theme:read', async (id) => packs.readTheme(id));
 handle('theme:save', async (data) => {
@@ -269,6 +275,12 @@ handle('theme:create', async (data) => {
   const id = packs.createTheme(data);
   broadcastThemesChanged();
   return id;
+});
+handle('theme:delete', async (id) => {
+  // An editor open on this theme would save it back, so close it first (unsaved edits go with the theme).
+  if (editorWin && !editorWin.isDestroyed() && new URL(editorWin.webContents.getURL()).searchParams.get('theme') === id) editorWin.destroy();
+  await packs.deleteTheme(id);
+  broadcastThemesChanged();
 });
 handle('theme:reveal', async (id) => {
   const dir = packs.themeDir(id);
@@ -289,6 +301,7 @@ handle('ui:titlebar', async ({ color, symbolColor }) => {
 });
 
 app.whenReady().then(() => {
+  packs.migrateUserThemes();
   packs.handleProtocol();
   createWindow();
   app.on('activate', () => {

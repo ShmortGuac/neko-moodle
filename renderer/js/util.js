@@ -165,6 +165,93 @@ function promptModal({ title, label = '', value = '', okLabel = 'OK', hint = '' 
   });
 }
 
+// Writing a forum post. `send({subject, message})` posts it; the modal stays open (showing the error) if that fails.
+// withSubject: false hides the subject field and keeps `subject` as given.
+function composeModal({ title, subject = '', withSubject = true, okLabel = 'Post', send }) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal';
+    wrap.innerHTML = `
+      <form class="modal__box modal__box--wide card">
+        <h3>${esc(title)}</h3>
+        ${withSubject ? `<label class="field"><span>Subject</span><input class="input" name="subject" value="${esc(subject)}" required maxlength="255"></label>` : ''}
+        <label class="field"><span>Message</span><textarea class="input input--area" name="message" rows="8" required></textarea></label>
+        <p class="modal__error" hidden></p>
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" data-cancel>Cancel</button>
+          <button class="btn btn--primary" data-send>${esc(okLabel)}</button>
+        </div>
+      </form>`;
+    const form = wrap.querySelector('form');
+    const error = wrap.querySelector('.modal__error');
+    const close = (result) => { wrap.remove(); resolve(result); };
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const post = { subject: withSubject ? form.subject.value.trim() : subject, message: form.message.value.trim() };
+      if (!post.subject || !post.message) return;
+      const button = wrap.querySelector('[data-send]');
+      button.disabled = true;
+      error.hidden = true;
+      try {
+        close(await send(post));
+      } catch (err) {
+        error.textContent = err.message || String(err);
+        error.hidden = false;
+        button.disabled = false;
+      }
+    });
+    wrap.querySelector('[data-cancel]').addEventListener('click', () => close(null));
+    // Escape only closes an empty draft, so a stray key press doesn't lose what was written.
+    wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !form.message.value.trim()) close(null); });
+    document.body.append(wrap);
+    (withSubject && !subject ? form.subject : form.message).focus();
+  });
+}
+
+// Asks before doing something that can't be undone. A statement adds a checkbox that must be ticked.
+// `run()` does the work; the modal stays open (showing the error) if it fails. Resolves to its result, or null.
+function confirmModal({ title, text = '', statement = '', okLabel = 'OK', run }) {
+  return new Promise((resolve) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'modal';
+    wrap.innerHTML = `
+      <form class="modal__box card">
+        <h3>${esc(title)}</h3>
+        ${text ? `<p class="modal__hint">${esc(text)}</p>` : ''}
+        ${statement ? `<label class="statement"><input type="checkbox" name="statement" required> <span>${esc(statement)}</span></label>` : ''}
+        <p class="modal__error" hidden></p>
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" data-cancel>Cancel</button>
+          <button class="btn btn--primary" data-ok>${esc(okLabel)}</button>
+        </div>
+      </form>`;
+    const error = wrap.querySelector('.modal__error');
+    const close = (result) => { wrap.remove(); resolve(result); };
+    wrap.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const button = wrap.querySelector('[data-ok]');
+      button.disabled = true;
+      error.hidden = true;
+      try {
+        close(await run());
+      } catch (err) {
+        error.textContent = err.message || String(err);
+        error.hidden = false;
+        button.disabled = false;
+      }
+    });
+    wrap.querySelector('[data-cancel]').addEventListener('click', () => close(null));
+    wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(null); });
+    document.body.append(wrap);
+    wrap.querySelector(statement ? 'input' : '[data-ok]').focus();
+  });
+}
+
+// Plain text from a text box as simple HTML: blank lines make paragraphs, single newlines make line breaks.
+function textToHtml(text) {
+  return text.trim().split(/\n\s*\n/).map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
+}
+
 // Shows Moodle-authored HTML (pages, book chapters) in a locked-down frame: no scripts can run, links open
 // through NEKO, and it's styled with the current theme. It grows to fit its content.
 function mountHtml(container, html) {
@@ -173,7 +260,7 @@ function mountHtml(container, html) {
   const css = `
     html, body { margin: 0; background: transparent; color: ${v('--text', '#1d2033')}; font-family: ${v('--font', 'system-ui, sans-serif')};
       font-size: 15px; line-height: 1.65; overflow-wrap: anywhere; }
-    body > :first-child { margin-top: 0; } body > :last-child { margin-bottom: 0; }
+    body { display: flow-root; } body > :first-child { margin-top: 0; } body > :last-child { margin-bottom: 0; }
     a { color: ${v('--accent', '#1f9e93')}; font-weight: 600; }
     img, video, iframe { max-width: 100%; height: auto; border-radius: 8px; }
     table { border-collapse: collapse; display: block; max-width: 100%; overflow-x: auto; }
@@ -194,7 +281,8 @@ function mountHtml(container, html) {
     cancelAnimationFrame(pending);
     pending = requestAnimationFrame(() => {
       try {
-        const h = `${frame.contentDocument.documentElement.scrollHeight}px`;
+        // The body, not the document: the document is never shorter than the frame, so short posts wouldn't shrink.
+        const h = `${Math.ceil(frame.contentDocument.body.getBoundingClientRect().height)}px`;
         if (frame.style.height !== h) frame.style.height = h;
       } catch {
         // frame gone

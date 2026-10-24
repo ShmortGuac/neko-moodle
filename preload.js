@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 // Each call resolves to {ok, data} or {ok:false, error, code}. Errors are rebuilt in
 // renderer/js/api.js because custom fields like .code don't survive contextBridge.
@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('nekoBridge', {
   call: call('ws:call'),
   tokenize: call('ws:tokenize'),
   fetchHtml: call('ws:fetch-html'),
+  rewriteHtml: call('ws:rewrite-html'),
   openWeb: call('web:open'),
 
   download: call('file:download'),
@@ -23,10 +24,16 @@ contextBridge.exposeInMainWorld('nekoBridge', {
   openDownloads: call('file:open-downloads'),
   openExternal: call('shell:open'),
 
+  // Files for an assignment submission. Dropped files are File objects; only real dropped files have a path.
+  pickFiles: call('submit:pick'),
+  addDroppedFiles: (files) => ipcRenderer.invoke('submit:dropped', [...files].map((f) => webUtils.getPathForFile(f))),
+  saveSubmission: call('submit:save'),
+
   listThemes: call('themes:list'),
   readTheme: call('theme:read'),
   saveTheme: call('theme:save'),
   createTheme: call('theme:create'),
+  deleteTheme: call('theme:delete'),
   importThemeAsset: call('theme:asset'),
   revealTheme: call('theme:reveal'),
   openEditor: call('editor:open'),

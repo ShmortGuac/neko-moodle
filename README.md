@@ -18,11 +18,15 @@ The app gets a Moodle app token the same way the official app does, and stores i
 
 ## Features
 
-- **Dashboard**: greeting, due-soon list, stats, recently visited courses
+- **Dashboard**: greeting, due-soon list, stats, latest announcements, recently visited courses
 - **Courses**: search and current/past filter
 - **Course page**: sections and activities, clickable links, per-file download, **Download all files** (skips files you already have)
-- **Deadlines**: grouped into Overdue / Today / Tomorrow / This week / Later
-- **Settings**: theme picker, theme options, theme editor, sign out
+- **Reading in the app**: pages and books open inside NEKO; other activities open in a signed-in in-app window
+- **Forums**: discussions with threaded replies and attachments; reply or start a discussion from NEKO
+- **Announcements**: the latest news from every course in one feed, with an unread badge
+- **Assignments**: instructions, due dates, status, grades and feedback; add files (pick or drag in) or online text, save drafts and submit for grading
+- **Deadlines**: grouped into Overdue / Today / Tomorrow / This week / Later; assignments open in NEKO
+- **Settings**: theme picker (one row, plus a Themes page with search), theme options, theme editor, sign out
 - Files are saved to `Downloads\NEKO\<course>\<section>\`
 
 ## The three layers
@@ -33,7 +37,7 @@ The app gets a Moodle app token the same way the official app does, and stores i
 | **Site profiles** | `sites/<id>.json` | One institution's quirks: quick-pick URLs, SSO button label, course-name and person-name parsing |
 | **Core app** | `main.js`, `src/`, `renderer/` | Talking to Moodle, pages, downloads |
 
-Built in: the neutral **Default** theme (Light / Dark). Make your own themes in the theme editor, or drop a
+Built in: the neutral **Default Light** and **Default Dark** themes. Make your own themes in the theme editor, or drop a
 theme folder into `themes/`.
 
 ### Theme packs

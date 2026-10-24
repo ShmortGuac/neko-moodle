@@ -5,6 +5,7 @@ const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home' },
   { id: 'courses', label: 'Courses', icon: 'book' },
   { id: 'deadlines', label: 'Deadlines', icon: 'clock' },
+  { id: 'announcements', label: 'Announcements', icon: 'megaphone' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ];
 
@@ -28,7 +29,8 @@ const App = {
   },
 
   applyTheme() {
-    Theme.apply(App.prefs.theme, App.prefs.variant, App.prefs.themeOptions[App.prefs.theme]);
+    App.migrateThemePref();
+    Theme.apply(App.prefs.theme, App.prefs.themeOptions[App.prefs.theme]);
     const body = document.body;
     const { decorations, sidebar } = Theme.cfg;
     const watermark = decorations.watermark || '';
@@ -43,13 +45,27 @@ const App = {
   },
 
   // A different theme can change art and text everywhere, so redraw the shell and current page.
+  // Themes used to have variants: "default" + variant "dark" is now the theme "default-dark".
+  migrateThemePref() {
+    if (!('variant' in App.prefs) || !Theme.packs.length) return;
+    const old = App.prefs.theme;
+    const id = [`${old}-${App.prefs.variant}`, old].find((x) => Theme.packs.some((p) => p.id === x));
+    if (id && id !== old) {
+      App.prefs.theme = id;
+      if (App.prefs.themeOptions[old]) App.prefs.themeOptions[id] = App.prefs.themeOptions[old];
+    }
+    delete App.prefs.variant;
+    App.savePrefs();
+  },
+
   reloadTheme() {
     App.applyTheme();
     if (!App.user || !App.current) return;
     const { name, params } = App.current;
     App.showShell();
-    App.navigate(name, params, { push: false });
     App.updateBadge(App.cache.events);
+    App.updateNewsBadge(App.cache.announcements);
+    return App.navigate(name, params, { push: false });
   },
 
   // ---------- Boot & auth ----------
@@ -89,6 +105,7 @@ const App = {
     App.showShell();
     App.navigate('dashboard', {}, { push: false });
     App.getEvents().then(App.updateBadge).catch(() => {});
+    App.getAnnouncements().then(App.updateNewsBadge).catch(() => {});
   },
 
   async signOut(message) {
@@ -127,6 +144,7 @@ const App = {
             ${NAV.map((n) => `
               <button data-view="${n.id}">${Icons[n.icon]}<span>${n.label}</span>
                 ${n.id === 'deadlines' ? '<span class="nav__badge" id="dueBadge" hidden></span>' : ''}
+                ${n.id === 'announcements' ? '<span class="nav__badge" id="newsBadge" hidden></span>' : ''}
               </button>`).join('')}
           </nav>
           <div class="sidebar__mascot">
@@ -167,7 +185,8 @@ const App = {
     App.current = { name, params };
     const token = ++App.navToken;
 
-    $$('.nav button').forEach((b) => b.classList.toggle('is-active', b.dataset.view === (view.nav || name)));
+    const navId = (typeof view.nav === 'function' ? view.nav(params) : view.nav) || name;
+    $$('.nav button').forEach((b) => b.classList.toggle('is-active', b.dataset.view === navId));
     $('#backBtn').hidden = App.history.length === 0;
     const setTitle = (t) => { $('#topTitle').textContent = t; };
     setTitle(view.title ? view.title(params) : '');
@@ -199,6 +218,7 @@ const App = {
     App.navigate(App.current.name, { ...App.current.params, force: true }, { push: false })
       .finally(() => icon?.classList.remove('spin'));
     App.getEvents().then(App.updateBadge).catch(() => {});
+    App.getAnnouncements().then(App.updateNewsBadge).catch(() => {});
   },
 
   // Moodle pages open in NEKO's in-app window (already signed in); other websites in the browser.
@@ -239,6 +259,43 @@ const App = {
     return App.cache.contents[courseid];
   },
 
+  // Every forum in the user's courses. Announcements are the forums of type 'news'.
+  async getForums() {
+    if (App.cache.forums) return App.cache.forums;
+    const courses = await App.getCourses();
+    App.cache.forums = courses.length ? await App.call('mod_forum_get_forums_by_courses', { courseids: courses.map((c) => c.id) }) : [];
+    return App.cache.forums;
+  },
+
+  // Every assignment in the user's courses, with its settings (due dates, what it accepts...).
+  async getAssignments() {
+    if (App.cache.assignments) return App.cache.assignments;
+    const courses = await App.getCourses();
+    const res = courses.length ? await App.call('mod_assign_get_assignments', { courseids: courses.map((c) => c.id) }) : {};
+    App.cache.assignments = (res.courses || []).flatMap((c) => c.assignments || []);
+    return App.cache.assignments;
+  },
+
+  // One page of a forum's discussions (pinned first, then latest activity), with avatars ready to show.
+  async getDiscussions(forumid, page = 0, perpage = 25) {
+    const { discussions = [] } = await App.call('mod_forum_get_forum_discussions', { forumid, page, perpage });
+    const pics = await neko.tokenize(discussions.map((d) => d.userpictureurl || ''));
+    discussions.forEach((d, i) => { d._picture = pics[i]; });
+    return discussions;
+  },
+
+  // The newest announcements across all courses.
+  async getAnnouncements() {
+    if (App.cache.announcements) return App.cache.announcements;
+    const [forums, courses] = await Promise.all([App.getForums(), App.getCourses()]);
+    const lists = await Promise.all(forums.filter((f) => f.type === 'news').map((forum) =>
+      App.getDiscussions(forum.id, 0, 5)
+        .then((list) => list.map((d) => ({ ...d, _forum: forum, _course: courses.find((c) => c.id === forum.course) })))
+        .catch(() => [])));
+    App.cache.announcements = lists.flat().sort((a, b) => b.created - a.created).slice(0, 30);
+    return App.cache.announcements;
+  },
+
   // Upcoming action events (assignments, quizzes...). Includes the last 2 weeks so overdue items show.
   async getEvents(force = false) {
     if (!force && App.cache.events) return App.cache.events;
@@ -256,6 +313,15 @@ const App = {
     if (!badge || !events) return;
     const now = Date.now() / 1000;
     const n = events.filter((e) => e.timesort - now < 7 * 86400).length;
+    badge.hidden = n === 0;
+    badge.textContent = n;
+  },
+
+  // Unread announcements.
+  updateNewsBadge(list) {
+    const badge = $('#newsBadge');
+    if (!badge || !list) return;
+    const n = list.filter((d) => d.numunread > 0).length;
     badge.hidden = n === 0;
     badge.textContent = n;
   },
@@ -312,6 +378,16 @@ const App = {
       }
       const course = e.target.closest('[data-course]');
       if (course) return App.navigate('course', { id: Number(course.dataset.course) });
+      const activity = e.target.closest('[data-open-activity]');
+      if (activity) {
+        const [courseId, cmid] = activity.dataset.openActivity.split(':').map(Number);
+        return App.navigate('activity', { courseId, cmid });
+      }
+      const disc = e.target.closest('[data-discussion]');
+      if (disc) {
+        const { discussion, forum, courseId, from } = disc.dataset;
+        return App.navigate('discussion', { discussionId: Number(discussion), forumId: Number(forum), courseId: Number(courseId), from });
+      }
       const nav = e.target.closest('[data-nav]');
       if (nav) return App.navigate(nav.dataset.nav);
       if (e.target.closest('[data-retry]')) App.refresh();
@@ -324,7 +400,7 @@ const App = {
 };
 
 function loadPrefs() {
-  const defaults = { theme: 'default', variant: 'light', mascot: true, watermark: true, themeOptions: {}, site: '', username: '', courseFilter: 'current' };
+  const defaults = { theme: 'default-light', mascot: true, watermark: true, themeOptions: {}, site: '', username: '', courseFilter: 'current' };
   let saved = {};
   try {
     saved = JSON.parse(localStorage.getItem('prefs') || '{}');
@@ -376,17 +452,51 @@ App.ui = {
       </button>`;
   },
 
+  // A discussion in a forum list or the announcements feed. showCourse adds the course and a preview of the post.
+  discussion(d, { showCourse = false, from = '' } = {}) {
+    const course = d._course;
+    const excerpt = showCourse ? stripHtml(d.message) : '';
+    const replied = d.numreplies > 0 && d.timemodified > d.created;
+    const meta = [
+      showCourse && course ? `<b>${esc(parseCourse(course).code)}</b>` : '',
+      esc(d.userfullname),
+      esc(relTime(d.created)),
+      !showCourse && replied ? `last reply ${esc(relTime(d.timemodified))}${d.usermodifiedfullname ? ` by ${esc(d.usermodifiedfullname)}` : ''}` : '',
+    ].filter(Boolean).join(' · ');
+    return `
+      <button class="discussion ${d.numunread ? 'is-unread' : ''}" data-discussion="${d.discussion}" data-forum="${d.forum ?? d._forum?.id ?? ''}" data-course-id="${course?.id ?? d._forum?.course ?? ''}" data-from="${esc(from)}">
+        <img class="avatar" src="${esc(d._picture || '')}" alt="" data-fallback>
+        <div class="discussion__main">
+          <div class="discussion__title">${d.pinned ? `<span class="discussion__flag" title="Pinned">${Icons.pin}</span>` : ''}${d.locked ? `<span class="discussion__flag" title="Locked">${Icons.lock}</span>` : ''}${esc(stripHtml(d.name || d.subject))}</div>
+          <div class="discussion__meta">${meta}</div>
+          ${excerpt ? `<div class="discussion__excerpt">${esc(excerpt.length > 220 ? `${excerpt.slice(0, 220)}…` : excerpt)}</div>` : ''}
+        </div>
+        <div class="discussion__side">
+          ${d.numunread ? `<span class="chip chip--pink">${d.numunread} new</span>` : ''}
+          ${d.numreplies ? `<span class="chip">${Icons.chat} ${d.numreplies}</span>` : ''}
+        </div>
+      </button>`;
+  },
+
   deadline(e) {
     const now = Date.now() / 1000;
     const overdue = e.timesort < now;
     const soon = !overdue && e.timesort - now < 2 * 86400;
     const d = new Date(e.timesort * 1000);
     const month = d.toLocaleString('en-MY', { month: 'short' });
+    // Activities NEKO can show itself open in the app; the rest on the website.
+    let cmid = 0;
+    try {
+      cmid = NATIVE_MODS.has(e.modulename) ? Number(new URL(e.url).searchParams.get('id')) || 0 : 0;
+    } catch {
+      // no usable URL
+    }
+    const target = cmid && e.course?.id ? `data-open-activity="${e.course.id}:${cmid}"` : `data-url="${esc(e.action?.url || e.url || '')}" title="Open on ${esc(brandName())}"`;
     const chip = overdue
       ? '<span class="chip chip--danger">Overdue</span>'
       : `<span class="chip ${soon ? 'chip--pink' : ''}">${esc(relTime(e.timesort))}</span>`;
     return `
-      <button class="deadline" data-url="${esc(e.action?.url || e.url || '')}" title="Open on ${esc(brandName())}">
+      <button class="deadline" ${target}>
         <div class="datebadge ${overdue ? 'datebadge--overdue' : soon ? 'datebadge--soon' : ''}"><b>${d.getDate()}</b><span>${month}</span></div>
         <div>
           <div class="deadline__name">${esc(e.activityname || e.name)}</div>

@@ -5,8 +5,8 @@ preview with sample data, drag-to-place art, and everything below as form fields
 reference for what the editor writes, if you'd rather edit `theme.json` by hand.
 
 Themes made in the editor are saved in your user folder (`%APPDATA%\NEKO\themes\<id>`).
-Built-in themes live in the app's `themes/` folder; the built-in Default is read-only, so "Customize"
-makes a copy.
+Built-in themes live in the app's `themes/` folder; the built-in Default Light and Default Dark are
+read-only, so "Customize" makes a copy.
 
 A theme is a folder in `themes/` with a `theme.json`, an optional `theme.css`, and any images or fonts
 it uses (usually in `assets/`). There's no code: themes are JSON, CSS and images only.
@@ -21,11 +21,14 @@ themes/my-theme/
 The folder name is the theme's id (lowercase letters, numbers, dashes). Paths like `"assets/pic.png"` are
 relative to the theme folder. Press `Ctrl+R` in the app to reload after editing.
 
-**Everything is optional.** Leave a setting out and the built-in default is used. A theme needs at least
-one entry in `variants`. Each variant (e.g. Light / Dark) can override **any** section below; objects
-merge key by key, and lists (`elements`, `palette`…) replace the theme's list.
+**Everything is optional.** Leave a setting out and the built-in default is used. One theme is one look:
+a light and a dark version are two separate themes (like Default Light and Default Dark).
 
-See `themes/default/theme.json` for a minimal theme, and the sections below for everything else.
+See `themes/default-light/theme.json` for a minimal theme, and the sections below for everything else.
+
+> Older themes had a `variants` list (e.g. Light / Dark). Themes in your user folder are converted
+> automatically: each variant becomes its own theme (`<id>-<variant>`), and the original folder is kept
+> in `%APPDATA%\NEKO\themes-backup`.
 
 ---
 
@@ -35,7 +38,10 @@ See `themes/default/theme.json` for a minimal theme, and the sections below for 
 "name": "My Theme",
 "author": "You",
 "version": "1.0.0",
-"description": "One line shown in the theme picker",
+"subtitle": "メイド",          // optional small text next to the name on the theme's card
+"description": "One line shown on the Themes page",
+"preview": "assets/preview.png",  // the picture on the theme's card
+"swatches": ["#f3f4f9", "#4f5fe8", "#1f9e93"],  // the dots on the card
 "about": "Shown in Settings → About this theme.\nNew lines and https:// links work.",
 "aboutImage": "assets/me.png",
 "links": [{ "label": "Homepage", "url": "https://example.com" }]
@@ -250,24 +256,15 @@ background-text switches. Users' choices are saved per theme.
 ]
 ```
 
-`on` / `off` accept anything a variant can override (tokens, strings, art, elements, backgrounds…),
-applied on top of the variant. While an option is on, the page has the class `opt-<id>`, so `theme.css`
+`on` / `off` accept any part of the theme (tokens, strings, art, elements, backgrounds…), applied on
+top of it; objects merge key by key, and lists (`elements`, `palette`…) replace the theme's list. While an option is on, the page has the class `opt-<id>`, so `theme.css`
 can react too:
 
 ```css
 .opt-compact .card__body { padding: 12px; }
 ```
 
-## Variants
+## Theme card
 
-```jsonc
-"variants": [
-  { "id": "light", "name": "Light", "subtitle": "optional", "preview": "assets/preview.png",
-    "swatches": ["#f3f4f9", "#4f5fe8", "#1f9e93"],
-    "tokens": { /* colours */ },
-    "login": { "elements": [ /* … */ ] }      // any section can be overridden per variant
-  }
-]
-```
-
-`preview` is the picture in the theme picker. Without one, the picker shows a gradient made from `swatches`.
+`preview` is the picture on the theme's card in Settings and on the Themes page. Without one, the card
+shows a gradient made from `swatches`.

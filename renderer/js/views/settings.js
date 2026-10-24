@@ -19,10 +19,8 @@ Views.settings = {
         <label class="switch"><input type="checkbox" data-pref="${key}" ${App.prefs[key] ? 'checked' : ''}><i></i></label>
       </div>`;
 
-    // Variant preview: the variant's picture, or a swatch strip for themes without art.
-    const preview = (pack, v) => (v.preview
-      ? `<img src="${esc(Theme.url(pack, v.preview))}" alt="">`
-      : `<div class="theme-card__plain" style="background:linear-gradient(135deg, ${(v.swatches || []).map(esc).join(', ') || 'var(--surface-2), var(--surface-2)'})"></div>`);
+    // One scrolling row, the theme in use first. "Show all" opens the Themes page.
+    const row = [Theme.pack, ...Theme.packs.filter((p) => p.id !== Theme.pack.id)];
 
     const decorations = [
       Theme.cfg.sidebar.mascot ? toggle('mascot', t('mascotName'), 'Show the theme\'s mascot in the sidebar and on course pages') : '',
@@ -47,24 +45,14 @@ Views.settings = {
         <div class="card__head">
           <h3 class="card__title">${Icons.heart} Theme</h3>
           <div class="toolbar">
+            <button class="btn btn--ghost btn--sm" id="allThemes">${Icons.grid} Show all (${Theme.packs.length})</button>
             <button class="btn btn--ghost btn--sm" id="newTheme">${Icons.star} New theme</button>
             <button class="btn btn--ghost btn--sm" id="editTheme">${Icons.settings} ${Theme.pack.locked ? 'Customize' : 'Edit theme'}</button>
+            ${Theme.pack.source === 'user' ? `<button class="btn btn--ghost btn--sm" id="deleteTheme" title="Delete this theme">${Icons.trash} Delete</button>` : ''}
           </div>
         </div>
         <div class="card__body">
-          ${Theme.packs.map((pack) => `
-            <div class="theme-pack">
-              <div class="theme-pack__head"><b>${esc(pack.name)}</b><span>${esc(pack.description || '')}</span></div>
-              <div class="theme-grid">
-                ${pack.variants.map((v) => `
-                  <button class="theme-card ${Theme.pack.id === pack.id && Theme.variant.id === v.id ? 'is-active' : ''}" data-pack="${esc(pack.id)}" data-variant="${esc(v.id)}">
-                    ${preview(pack, v)}
-                    <div class="theme-card__swatches">${(v.swatches || []).map((c) => `<i style="background:${esc(c)}"></i>`).join('')}</div>
-                    <span class="theme-card__check">${Icons.check}</span>
-                    <div class="theme-card__label">${esc(v.name)} <small>${esc(v.subtitle || '')}</small></div>
-                  </button>`).join('')}
-              </div>
-            </div>`).join('')}
+          <div class="theme-row" id="themeRow">${row.map((p) => Views.themes.card(p)).join('')}</div>
         </div>
       </div>
 
@@ -105,7 +93,7 @@ Views.settings = {
             <div>
               <b style="color:var(--text)">${esc(Theme.pack.name)}</b>${Theme.pack.version ? ` v${esc(Theme.pack.version)}` : ''}
               ${Theme.pack.author ? `· by ${esc(Theme.pack.author)}` : ''}<br>
-              <span style="font-size:12px">Variant: ${esc(Theme.variant.name)}</span>
+              ${Theme.pack.description ? `<span style="font-size:12px">${esc(Theme.pack.description)}</span>` : ''}
               ${Theme.cfg.about ? `<div class="about__text" style="margin-top:8px">${linkify(Theme.cfg.about)}</div>` : ''}
               ${Theme.cfg.links.length ? `<div class="about__links">${Theme.cfg.links.map((l) => `<button class="btn btn--ghost btn--sm" data-url="${esc(l.url)}">${Icons.external} ${esc(l.label)}</button>`).join('')}</div>` : ''}
             </div>
@@ -126,12 +114,7 @@ Views.settings = {
         </div>
       </div>`;
 
-    $$('[data-pack]', root).forEach((b) => b.addEventListener('click', () => {
-      App.prefs.theme = b.dataset.pack;
-      App.prefs.variant = b.dataset.variant;
-      App.savePrefs();
-      App.reloadTheme();
-    }));
+    Views.themes.bind($('#themeRow', root));
     $$('[data-pref]', root).forEach((input) => input.addEventListener('change', () => {
       App.prefs[input.dataset.pref] = input.checked;
       App.savePrefs();
@@ -143,10 +126,9 @@ Views.settings = {
       App.savePrefs();
       App.reloadTheme();
     }));
-    $('#newTheme', root).addEventListener('click', async () => {
-      const name = await promptModal({ title: 'New theme', label: 'Name', value: 'My theme', okLabel: 'Create', hint: 'Starts from the Default theme. You can change everything in the editor.' });
-      if (name) Views.settings.openEditorFor(await neko.createTheme({ name }));
-    });
+    $('#allThemes', root).addEventListener('click', () => App.navigate('themes'));
+    $('#deleteTheme', root)?.addEventListener('click', () => Views.themes.remove(Theme.pack.id));
+    $('#newTheme', root).addEventListener('click', () => Views.themes.create());
     $('#editTheme', root).addEventListener('click', async () => {
       if (!Theme.pack.locked) return Views.settings.openEditorFor(Theme.pack.id);
       const name = await promptModal({ title: `Customize ${Theme.pack.name}`, label: 'Name for your copy', value: `My ${Theme.pack.name}`, okLabel: 'Make a copy', hint: "Built-in themes can't be changed, so you'll edit a copy." });

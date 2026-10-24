@@ -42,9 +42,9 @@ const ColorPicker = {
     return { r: f(5), g: f(3), b: f(1), a };
   },
 
-  // Distinct solid colours from the current variant, offered as swatches.
+  // Distinct solid colours from the theme, offered as swatches.
   themeSwatches() {
-    const tokens = { ...(Editor.layers().packCfg.tokens || {}), ...(Editor.layers().variantCfg.tokens || {}) };
+    const tokens = Editor.draft.tokens || {};
     const seen = new Set();
     return Object.values(tokens).map(ColorPicker.parse).filter(Boolean).map(ColorPicker.format)
       .filter((c) => !seen.has(c) && seen.add(c)).slice(0, 16);

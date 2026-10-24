@@ -122,8 +122,7 @@ class MoodleClient {
     return u.toString();
   }
 
-  // Fetches an activity's HTML file (a page, a book chapter) and points its images at the tokenised
-  // file URLs so they load. Links keep plain URLs so the token never ends up in a browser.
+  // Fetches an activity's HTML file (a page, a book chapter), ready to show (see rewriteHtml).
   async fetchHtml(url) {
     if (!this.isOwnUrl(url)) throw new MoodleError('Refusing to fetch from outside your Moodle site.');
     let res;
@@ -133,18 +132,33 @@ class MoodleClient {
       throw new MoodleError(`Could not reach the server (${e.cause?.code || e.name}).`, 'network');
     }
     if (!res.ok) throw new MoodleError(`Server responded with ${res.status}.`, 'http');
-    const html = await res.text();
-    return html.replace(/(\s(src|href|poster)\s*=\s*)(["'])(.*?)\3/gi, (match, pre, attr, q, value) => {
+    return this.rewriteHtml(await res.text(), url);
+  }
+
+  // Makes Moodle HTML (pages, forum posts) absolute and points images at tokenised file URLs so they load.
+  // Links keep plain URLs so the token never ends up in a browser; file links go to the signed-in web URL.
+  rewriteHtml(html, base = this.site) {
+    return String(html || '').replace(/(\s(src|href|poster)\s*=\s*)(["'])(.*?)\3/gi, (match, pre, attr, q, value) => {
       if (/^(#|mailto:|data:|javascript:)/i.test(value)) return match;
       let abs;
       try {
-        abs = new URL(value.replace(/&amp;/g, '&'), url).toString();
+        abs = new URL(value.replace(/&amp;/g, '&'), base).toString();
       } catch {
         return match;
       }
-      if (attr.toLowerCase() !== 'href' && this.isOwnUrl(abs) && abs.includes('/pluginfile.php')) abs = this.tokenize(abs);
+      if (this.isOwnUrl(abs) && abs.includes('/pluginfile.php')) {
+        abs = attr.toLowerCase() === 'href' ? this.untokenize(abs) : this.tokenize(abs);
+      }
       return `${pre}${q}${abs.replace(/&/g, '&amp;')}${q}`;
     });
+  }
+
+  // The browser-facing form of a file URL: regular pluginfile endpoint, no token.
+  untokenize(url) {
+    const u = new URL(url);
+    u.pathname = u.pathname.replace('/webservice/pluginfile.php', '/pluginfile.php');
+    u.searchParams.delete('token');
+    return u.toString();
   }
 
   // Files on Moodle need the token and the webservice pluginfile endpoint.

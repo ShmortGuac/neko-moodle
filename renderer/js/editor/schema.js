@@ -1,7 +1,6 @@
 // Every section and field the theme editor shows. Each field edits one path in theme.json.
 //   path    where the value lives (e.g. "tokens.primary", "login.card.x")
 //   type    how it's edited (see fields.js)
-//   abs     always stored on the theme itself, never per variant (theme info)
 //   page    the preview page to show when the section opens
 
 const ALIGN_OPTIONS = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
@@ -14,16 +13,18 @@ const EDITOR_SECTIONS = [
   {
     id: 'info', title: 'Theme info', page: 'settings',
     fields: [
-      { path: 'name', label: 'Name', type: 'text', abs: true },
-      { path: 'author', label: 'Author', type: 'text', abs: true },
-      { path: 'version', label: 'Version', type: 'text', abs: true, placeholder: '1.0.0' },
-      { path: 'description', label: 'Short description', type: 'text', abs: true, hint: 'Shown next to the theme in the picker.' },
+      { path: 'name', label: 'Name', type: 'text' },
+      { path: 'subtitle', label: 'Subtitle', type: 'text', hint: 'Small text next to the name in the picker (optional).' },
+      { path: 'author', label: 'Author', type: 'text' },
+      { path: 'version', label: 'Version', type: 'text', placeholder: '1.0.0' },
+      { path: 'description', label: 'Short description', type: 'text', hint: 'Shown under the theme on the Themes page.' },
+      { path: 'preview', label: 'Picker picture', type: 'image', hint: 'The picture on the theme\'s card. Without one, the card shows a gradient of the swatches.' },
+      { path: 'swatches', label: 'Picker swatches', type: 'swatches' },
       { path: 'about', label: 'About this theme', type: 'textarea', hint: 'Shown in Settings → About this theme. New lines and https:// links work.' },
       { path: 'aboutImage', label: 'About image', type: 'image' },
       { path: 'links', label: 'Links', type: 'links' },
     ],
   },
-  { id: 'variants', title: 'Variants', page: 'settings', custom: 'variants' },
   {
     id: 'colours', title: 'Colours', page: 'dashboard',
     fields: [
@@ -113,6 +114,7 @@ const EDITOR_SECTIONS = [
       { path: 'loading.bootText', label: 'Starting up', type: 'text' },
       { path: 'loading.courseText', label: 'Opening a course', type: 'text' },
       { path: 'loading.deadlinesText', label: 'Loading deadlines', type: 'text' },
+      { path: 'loading.forumText', label: 'Loading forums', type: 'text' },
       { path: 'loading.textColor', label: 'Text colour', type: 'color' },
     ],
   },
@@ -173,6 +175,9 @@ const EDITOR_SECTIONS = [
       { path: 'strings.noCourses', label: 'No courses found', type: 'text' },
       { path: 'strings.eyebrowCourses', label: 'Small title: Courses', type: 'text' },
       { path: 'strings.eyebrowDeadlines', label: 'Small title: Deadlines', type: 'text' },
+      { path: 'strings.eyebrowAnnouncements', label: 'Small title: Announcements', type: 'text' },
+      { path: 'strings.noAnnouncements', label: 'No announcements: title', type: 'text' },
+      { path: 'strings.noAnnouncementsText', label: 'No announcements: text', type: 'text' },
       { path: 'strings.eyebrowSettings', label: 'Small title: Settings', type: 'text' },
       { path: 'strings.mascotName', label: 'Mascot switch label', type: 'text' },
       { path: 'strings.watermarkName', label: 'Background-text switch label', type: 'text' },

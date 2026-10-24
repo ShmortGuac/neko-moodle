@@ -1,8 +1,8 @@
-// Theme engine: loads theme packs, merges core defaults + pack + variant into Theme.cfg,
+// Theme engine: loads theme packs, merges core defaults + the theme (+ its options) into Theme.cfg,
 // turns colours/backgrounds/radii into CSS variables and renders theme elements and text templates.
 // The full format is documented in themes/README.md.
 
-// What every theme starts from. Packs and variants override any part of it.
+// What every theme starts from. A theme overrides any part of it.
 const THEME_DEFAULTS = {
   tokens: {},
   background: null,
@@ -21,6 +21,9 @@ const THEME_DEFAULTS = {
     noCourses: 'No courses here',
     eyebrowCourses: '',
     eyebrowDeadlines: '',
+    eyebrowAnnouncements: '',
+    noAnnouncements: 'No announcements',
+    noAnnouncementsText: 'Nothing new from your lecturers.',
     eyebrowSettings: '',
     mascotName: 'Mascot',
     watermarkName: 'Background text',
@@ -45,6 +48,7 @@ const THEME_DEFAULTS = {
     bootText: 'Starting up',
     courseText: 'Opening course',
     deadlinesText: 'Checking your deadlines',
+    forumText: 'Loading discussions',
     textColor: null,
   },
   hero: {
@@ -96,7 +100,6 @@ function deepMerge(...layers) {
 const Theme = {
   packs: [],
   pack: null,
-  variant: null,
   cfg: deepMerge(THEME_DEFAULTS),
   options: [],
   // Set by the theme editor: don't touch the startup cache, and use unsaved CSS instead of theme.css.
@@ -107,10 +110,8 @@ const Theme = {
     Theme.packs = await neko.listThemes();
   },
 
-  find(packId, variantId) {
-    const pack = Theme.packs.find((p) => p.id === packId) || Theme.packs.find((p) => p.id === 'default') || Theme.packs[0];
-    const variant = pack.variants.find((v) => v.id === variantId) || pack.variants[0];
-    return { pack, variant };
+  find(packId) {
+    return Theme.packs.find((p) => p.id === packId) || Theme.packs.find((p) => p.id === 'default-light') || Theme.packs[0];
   },
 
   // "assets/x.png" inside a pack -> theme://<pack>/assets/x.png
@@ -127,15 +128,13 @@ const Theme = {
   },
 
   // optionValues: the user's saved toggles for this pack, { [optionId]: true/false }.
-  apply(packId, variantId, optionValues = {}) {
-    const { pack, variant } = Theme.find(packId, variantId);
-    const { variants, id, hasCss, ...packCfg } = pack;
-    const { id: _v, name: _n, subtitle: _s, preview: _p, swatches: _w, ...variantCfg } = variant;
+  apply(packId, optionValues = {}) {
+    const pack = Theme.find(packId);
+    const { id, hasCss, ...packCfg } = pack;
     Theme.pack = pack;
-    Theme.variant = variant;
 
     // Theme options are toggles that layer extra settings on top ("on" / "off").
-    let merged = deepMerge(THEME_DEFAULTS, packCfg, variantCfg);
+    let merged = deepMerge(THEME_DEFAULTS, packCfg);
     const options = (merged.options || []).filter((o) => o && OPTION_ID.test(o.id || ''));
     Theme.options = options.map((o) => ({ ...o, value: optionValues[o.id] ?? o.default !== false }));
     for (const o of Theme.options) {
@@ -208,7 +207,6 @@ const Theme = {
 
     const root = document.documentElement;
     root.dataset.theme = pack.id;
-    root.dataset.variant = variant.id;
     root.classList.toggle('has-motif', Boolean(cfg.motif));
     // opt-<id> classes let theme.css react to options
     [...root.classList].filter((c) => c.startsWith('opt-')).forEach((c) => root.classList.remove(c));

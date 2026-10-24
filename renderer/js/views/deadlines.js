@@ -24,7 +24,7 @@ Views.deadlines = {
         <div>
           ${t('eyebrowDeadlines') ? `<div class="page-head__eyebrow">${esc(t('eyebrowDeadlines'))}</div>` : ''}
           <h1>Deadlines</h1>
-          <p>Assignments, quizzes and anything else waiting on you. Click one to open it on ${esc(brandName())}.</p>
+          <p>Assignments, quizzes and anything else waiting on you. Click one to open it.</p>
         </div>
       </div>
       ${events.length

@@ -80,6 +80,14 @@ Views.dashboard = {
         </div>
       </div>
 
+      <div class="card dash-news">
+        <div class="card__head">
+          <h3 class="card__title">${Icons.megaphone} Latest announcements</h3>
+          <button class="btn btn--ghost btn--sm" data-nav="announcements">See all</button>
+        </div>
+        <div class="card__body" id="dashNews">${loadingHTML('forum')}</div>
+      </div>
+
       <div class="section-title">
         <h2>${Icons.book} Recently visited</h2>
         <button class="btn btn--ghost btn--sm" data-nav="courses">All courses</button>
@@ -87,5 +95,16 @@ Views.dashboard = {
       ${courses.length
         ? `<div class="course-grid">${courses.slice(0, 8).map(App.ui.courseCard).join('')}</div>`
         : emptyHTML('No courses yet', 'Once you are enrolled, your courses show up here.')}`;
+
+    // Announcements load after the rest so they never hold up the dashboard.
+    App.getAnnouncements().then((list) => {
+      if (!ctx.isCurrent()) return;
+      App.updateNewsBadge(list);
+      $('#dashNews', root).innerHTML = list.length
+        ? `<div class="discussion-list">${list.slice(0, 3).map((d) => App.ui.discussion(d, { showCourse: true, from: 'announcements' })).join('')}</div>`
+        : emptyHTML(t('noAnnouncements'), t('noAnnouncementsText'));
+    }).catch((e) => {
+      if (ctx.isCurrent() && !App.handleAuthError(e)) $('.dash-news', root)?.remove();
+    });
   },
 };
