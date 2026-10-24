@@ -26,8 +26,8 @@ The app gets a Moodle app token the same way the official app does, and stores i
 - **Announcements**: the latest news from every course in one feed, with an unread badge
 - **Assignments**: instructions, due dates, status, grades and feedback; add files (pick or drag in) or online text, save drafts and submit for grading
 - **Deadlines**: grouped into Overdue / Today / Tomorrow / This week / Later; assignments open in NEKO
-- **Settings**: theme picker (one row, plus a Themes page with search), theme options, theme editor, sign out
-- Files are saved to `Downloads\NEKO\<course>\<section>\`
+- **Settings**: theme picker (one row, plus a Themes page with search), theme options, theme editor, import themes, sign out
+- Files are saved to `Downloads\NEKO\<course>\<section>\`; pick another folder in Settings → Downloads
 
 ## The three layers
 

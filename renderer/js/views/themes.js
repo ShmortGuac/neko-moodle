@@ -65,6 +65,40 @@ Views.themes = {
     });
   },
 
+  // Picks a theme.json or .zip to add. The themes list redraws by itself (themes:changed).
+  async importThemes() {
+    let res;
+    try {
+      res = await neko.importThemes();
+    } catch (e) {
+      return toast('Could not import', { type: 'error', message: e.message });
+    }
+    if (!res) return;
+    if (res.ids.length) {
+      await Theme.load();
+      const names = res.ids.map((id) => Theme.packs.find((p) => p.id === id)?.name || id);
+      const use = async () => {
+        App.prefs.theme = res.ids[0];
+        App.savePrefs();
+        await App.reloadTheme();
+      };
+      toast(res.ids.length === 1 ? 'Theme imported' : `${res.ids.length} themes imported`, {
+        type: 'ok',
+        message: names.join(', '),
+        actions: res.ids.length === 1 ? [{ label: 'Use it', onClick: use }] : [],
+      });
+    }
+    if (res.errors.length) toast(res.ids.length ? 'Some files weren\'t imported' : 'Nothing was imported', { type: 'error', message: res.errors.join(' · '), timeout: 9000 });
+  },
+
+  async openFolder() {
+    try {
+      await neko.openThemesFolder();
+    } catch (e) {
+      toast('Could not open the themes folder', { type: 'error', message: e.message });
+    }
+  },
+
   async create() {
     const name = await promptModal({ title: 'New theme', label: 'Name', value: 'My theme', okLabel: 'Create', hint: 'Starts from Default Light. You can change everything in the editor.' });
     if (name) Views.settings.openEditorFor(await neko.createTheme({ name }));
@@ -87,6 +121,8 @@ Views.themes = {
             <button data-f="builtin">Built in</button>
             <button data-f="user">Mine</button>
           </div>
+          <button class="btn btn--ghost" id="importTheme" title="Add a theme.json or .zip someone shared">${Icons.upload} Import</button>
+          <button class="btn btn--ghost" id="themesFolder" title="Open the folder your themes are kept in">${Icons.folder} Open folder</button>
           <button class="btn btn--ghost" id="newTheme">${Icons.star} New theme</button>
         </div>
       </div>
@@ -113,6 +149,8 @@ Views.themes = {
       draw();
     }));
     $('#newTheme', root).addEventListener('click', () => Views.themes.create());
+    $('#importTheme', root).addEventListener('click', () => Views.themes.importThemes());
+    $('#themesFolder', root).addEventListener('click', () => Views.themes.openFolder());
     Views.themes.bind(root);
     draw();
   },

@@ -4,7 +4,12 @@
 preview with sample data, drag-to-place art, and everything below as form fields. This page is the
 reference for what the editor writes, if you'd rather edit `theme.json` by hand.
 
-Themes made in the editor are saved in your user folder (`%APPDATA%\NEKO\themes\<id>`).
+Themes made in the editor are saved in your user folder (`%APPDATA%\NEKO\themes\<id>`). Settings → Theme →
+**Open themes folder** opens it.
+
+**Sharing a theme:** zip its folder and send it. **Import theme** (in Settings, or on the Themes page) takes a
+`.zip` (one or more theme folders, or a `theme.json` at the top) or a `theme.json` (its whole folder comes along).
+Each import becomes a new theme, so nothing is overwritten. Only JSON, CSS, images and fonts are copied.
 Built-in themes live in the app's `themes/` folder; the built-in Default Light and Default Dark are
 read-only, so "Customize" makes a copy.
 

@@ -258,6 +258,9 @@ handle('file:open-downloads', async () => {
   fs.mkdirSync(downloads.root(), { recursive: true });
   await shell.openPath(downloads.root());
 });
+handle('downloads:folder', async () => downloads.folderInfo());
+handle('downloads:choose', async () => downloads.chooseRoot(win));
+handle('downloads:reset', async () => downloads.resetRoot());
 
 handle('shell:open', async (url) => openExternal(url));
 
@@ -281,6 +284,15 @@ handle('theme:delete', async (id) => {
   if (editorWin && !editorWin.isDestroyed() && new URL(editorWin.webContents.getURL()).searchParams.get('theme') === id) editorWin.destroy();
   await packs.deleteTheme(id);
   broadcastThemesChanged();
+});
+handle('themes:import', async () => {
+  const res = await packs.importThemes(win);
+  if (res?.ids.length) broadcastThemesChanged();
+  return res;
+});
+handle('themes:open-folder', async () => {
+  const err = await shell.openPath(packs.userFolder());
+  if (err) throw new Error(err);
 });
 handle('theme:reveal', async (id) => {
   const dir = packs.themeDir(id);

@@ -451,6 +451,10 @@ body:not(.has-stripes) .stripes, body:not(.has-stars) .stars { display: none; }
 .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
 .theme-row { display: grid; grid-auto-flow: column; grid-auto-columns: 250px; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 4px 2px 12px; margin: -4px -2px -12px; }
 .theme-row .theme-card { scroll-snap-align: start; }
+.settings-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px 18px; flex-wrap: wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.settings-foot p { margin: 0; flex: 1 1 260px; font-size: 13px; line-height: 1.55; color: var(--text-muted); }
+.settings-foot b { color: var(--text); }
+.dl-path { word-break: break-all; }
 .theme-tile { position: relative; display: flex; min-width: 0; }
 .theme-tile .theme-card { flex: 1; }
 .theme-card__delete { position: absolute; right: 10px; bottom: 10px; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--surface); color: var(--text-muted); box-shadow: var(--shadow-sm); opacity: 0; transition: opacity 0.15s, color 0.15s; }

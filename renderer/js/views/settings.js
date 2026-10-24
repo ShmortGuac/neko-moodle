@@ -53,6 +53,13 @@ Views.settings = {
         </div>
         <div class="card__body">
           <div class="theme-row" id="themeRow">${row.map((p) => Views.themes.card(p)).join('')}</div>
+          <div class="settings-foot">
+            <p>Your themes are kept in the themes folder. Import a <b>theme.json</b> or <b>.zip</b> to add a theme someone shared.</p>
+            <div class="toolbar">
+              <button class="btn btn--ghost btn--sm" id="importTheme">${Icons.upload} Import theme</button>
+              <button class="btn btn--ghost btn--sm" id="themesFolder">${Icons.folder} Open themes folder</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -67,9 +74,13 @@ Views.settings = {
           <div class="card__head"><h3 class="card__title">${Icons.folder} Downloads</h3></div>
           <div class="card__body">
             <p style="margin:0 0 14px;color:var(--text-muted);font-size:13px;line-height:1.6">
-              Files are saved to <b>Downloads\\NEKO\\&lt;course&gt;\\&lt;section&gt;</b>. Files you already have are skipped.
+              Files are saved to <b class="dl-path" id="dlPath">your download folder</b><b>\\&lt;course&gt;\\&lt;section&gt;</b>. Files you already have are skipped.
             </p>
-            <button class="btn btn--ghost" id="openDl">${Icons.folder} Open downloads folder</button>
+            <div class="toolbar">
+              <button class="btn btn--ghost" id="openDl">${Icons.folder} Open downloads folder</button>
+              <button class="btn btn--ghost" id="changeDl">${Icons.settings} Change…</button>
+              <button class="btn btn--ghost" id="resetDl" hidden>Use default</button>
+            </div>
           </div>
         </div>
 
@@ -105,7 +116,7 @@ Views.settings = {
           <div class="card__head"><h3 class="card__title">${Icons.info} About the app</h3></div>
           <div class="card__body about">
             <div>
-              <b style="color:var(--text)">${esc(APP_NAME)}</b> v0.1.0<br>
+              <b style="color:var(--text)">${esc(APP_NAME)}</b> v0.1.1<br>
               ${esc(APP_DESCRIPTION)}
               ${profile?.disclaimer ? esc(profile.disclaimer) : ''}
             </div>
@@ -134,7 +145,34 @@ Views.settings = {
       const name = await promptModal({ title: `Customize ${Theme.pack.name}`, label: 'Name for your copy', value: `My ${Theme.pack.name}`, okLabel: 'Make a copy', hint: "Built-in themes can't be changed, so you'll edit a copy." });
       if (name) Views.settings.openEditorFor(await neko.createTheme({ name, from: Theme.pack.id }));
     });
-    $('#openDl', root).addEventListener('click', () => neko.openDownloads());
+    $('#importTheme', root).addEventListener('click', () => Views.themes.importThemes());
+    $('#themesFolder', root).addEventListener('click', () => Views.themes.openFolder());
+
+    // The download folder lives in the main process; show it once it's known.
+    const showDl = (info) => {
+      if (!info || !root.isConnected) return;
+      $('#dlPath', root).textContent = info.folder;
+      $('#dlPath', root).title = info.folder;
+      $('#resetDl', root).hidden = !info.custom;
+      $('#resetDl', root).title = `Save to ${info.default} again`;
+    };
+    neko.downloadFolder().then(showDl, () => {});
+    $('#openDl', root).addEventListener('click', () => neko.openDownloads().catch((e) => toast('Could not open the folder', { type: 'error', message: e.message })));
+    $('#changeDl', root).addEventListener('click', async () => {
+      try {
+        const info = await neko.chooseDownloadFolder();
+        if (!info) return;
+        showDl(info);
+        toast('Download folder changed', { type: 'ok', message: `New files are saved to ${info.folder}` });
+      } catch (e) {
+        toast('Could not change the folder', { type: 'error', message: e.message });
+      }
+    });
+    $('#resetDl', root).addEventListener('click', async () => {
+      const info = await neko.resetDownloadFolder();
+      showDl(info);
+      toast('Download folder reset', { type: 'ok', message: `New files are saved to ${info.folder}` });
+    });
     $('#logout', root).addEventListener('click', () => App.signOut());
   },
 };

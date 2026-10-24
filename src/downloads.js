@@ -1,14 +1,47 @@
-// Saves course files to Downloads/NEKO/<course>/<...>.
+// Saves course files to <download folder>/<course>/<...>. The folder is Downloads/NEKO unless the
+// user picked another one in Settings (kept in <userData>/downloads.json).
 // Files already on disk with the same size are skipped, so "Download all" works as a sync.
 
-const { app } = require('electron');
+const { app, dialog } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Readable } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
 const { MoodleError } = require('./moodle');
 
-const root = () => path.join(app.getPath('downloads'), 'NEKO');
+const defaultRoot = () => path.join(app.getPath('downloads'), 'NEKO');
+const configFile = () => path.join(app.getPath('userData'), 'downloads.json');
+
+function customRoot() {
+  try {
+    const { folder } = JSON.parse(fs.readFileSync(configFile(), 'utf8'));
+    return typeof folder === 'string' && path.isAbsolute(folder) ? folder : null;
+  } catch {
+    return null;
+  }
+}
+
+const root = () => customRoot() || defaultRoot();
+const folderInfo = () => ({ folder: root(), custom: !!customRoot(), default: defaultRoot() });
+
+// Asks for a new download folder. Returns the folder info, or null if cancelled.
+async function chooseRoot(win) {
+  const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+    title: 'Choose where NEKO saves files',
+    defaultPath: root(),
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (canceled || !filePaths.length) return null;
+  const folder = path.resolve(filePaths[0]);
+  if (folder === defaultRoot()) return resetRoot();
+  fs.writeFileSync(configFile(), `${JSON.stringify({ folder }, null, 2)}\n`, 'utf8');
+  return folderInfo();
+}
+
+function resetRoot() {
+  fs.rmSync(configFile(), { force: true });
+  return folderInfo();
+}
 
 function safeName(name) {
   const cleaned = String(name || '')
@@ -51,4 +84,4 @@ async function downloadFile(client, { url, filename, folder = [], filesize }) {
   return { path: target, skipped: false };
 }
 
-module.exports = { downloadFile, root };
+module.exports = { downloadFile, root, folderInfo, chooseRoot, resetRoot };

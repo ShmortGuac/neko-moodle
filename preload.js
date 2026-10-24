@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('nekoBridge', {
   openPath: call('file:open'),
   showInFolder: call('file:show'),
   openDownloads: call('file:open-downloads'),
+  downloadFolder: call('downloads:folder'),
+  chooseDownloadFolder: call('downloads:choose'),
+  resetDownloadFolder: call('downloads:reset'),
   openExternal: call('shell:open'),
 
   // Files for an assignment submission. Dropped files are File objects; only real dropped files have a path.
@@ -34,6 +37,8 @@ contextBridge.exposeInMainWorld('nekoBridge', {
   saveTheme: call('theme:save'),
   createTheme: call('theme:create'),
   deleteTheme: call('theme:delete'),
+  importThemes: call('themes:import'),
+  openThemesFolder: call('themes:open-folder'),
   importThemeAsset: call('theme:asset'),
   revealTheme: call('theme:reveal'),
   openEditor: call('editor:open'),

@@ -7,7 +7,9 @@
 //   <userData>/themes   made in the theme editor; wins over a built-in theme with the same id
 
 const { app, dialog, protocol, net, shell } = require('electron');
+const { execFile } = require('node:child_process');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
@@ -17,6 +19,9 @@ const LOCKED = new Set(['default-light', 'default-dark']);
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 const IMAGE_TYPES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const ASSET_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'apng', 'woff', 'woff2', 'ttf', 'otf'];
+// Files an imported theme may bring along. Anything else in its folder is left out.
+const THEME_FILES = new Set(['json', 'css', ...ASSET_EXTS]);
+const IMPORT_LIMIT = 200 * 1024 * 1024;
 
 const userDir = () => path.join(app.getPath('userData'), 'themes');
 
@@ -182,6 +187,104 @@ async function deleteTheme(id) {
   await shell.trashItem(dir);
 }
 
+// Lets the user pick themes to import: a theme.json (its whole folder comes along) or a .zip of one
+// or more theme folders. Each becomes a new theme in the user folder; nothing is overwritten.
+// Returns { ids, errors }, or null if cancelled.
+async function importThemes(win) {
+  const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+    title: 'Import themes',
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Themes (theme.json or .zip)', extensions: ['json', 'zip'] }],
+  });
+  if (canceled || !filePaths.length) return null;
+  return importFiles(filePaths);
+}
+
+async function importFiles(filePaths) {
+  const ids = [];
+  const errors = [];
+  for (const file of filePaths) {
+    try {
+      if (path.extname(file).toLowerCase() === '.zip') ids.push(...(await importZip(file)));
+      else ids.push(...importFolder(path.dirname(file), path.basename(file)));
+    } catch (e) {
+      errors.push(`${path.basename(file)}: ${e.message}`);
+    }
+  }
+  return { ids, errors };
+}
+
+async function importZip(file) {
+  if (fs.statSync(file).size > IMPORT_LIMIT) throw new Error('The file is too big.');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'neko-theme-'));
+  try {
+    // Windows' own tar reads .zip files. It refuses "../" paths, and only real files are copied out.
+    const tar = process.platform === 'win32' ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
+    await new Promise((resolve, reject) => execFile(tar, ['-xf', file, '-C', tmp], { windowsHide: true }, (err) => (err ? reject(new Error('That isn\'t a zip file NEKO can read.')) : resolve())));
+    // The theme can be at the top of the zip, or in one folder per theme.
+    if (fs.existsSync(path.join(tmp, 'theme.json'))) return importFolder(tmp, 'theme.json', path.basename(file, path.extname(file)));
+    const found = fs.readdirSync(tmp, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && fs.existsSync(path.join(tmp, d.name, 'theme.json')));
+    if (!found.length) throw new Error('No theme.json in the zip.');
+    return found.flatMap((d) => importFolder(path.join(tmp, d.name), 'theme.json'));
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+// Copies a theme folder into the user folder under a new id. Old themes with variants become one theme each.
+function importFolder(src, manifest = 'theme.json', fallbackName = path.basename(src)) {
+  let theme;
+  try {
+    theme = readJson(path.join(src, manifest));
+  } catch {
+    throw new Error('Not a valid theme.json.');
+  }
+  if (!isPlainObject(theme)) throw new Error('Not a valid theme.json.');
+  const parts = Array.isArray(theme.variants) && theme.variants.length ? splitVariants(theme).map((p) => p.theme) : [theme];
+  return parts.map((part) => {
+    if (!part.name) part.name = fallbackName;
+    const base = slugify(part.name);
+    let id = base;
+    for (let n = 2; themeDir(id); n++) id = `${base}-${n}`;
+    const dest = path.join(userDir(), id);
+    copyThemeFiles(src, dest, manifest);
+    fs.writeFileSync(path.join(dest, 'theme.json'), `${formatJson(part)}\n`, 'utf8');
+    return id;
+  });
+}
+
+// Copies the theme's CSS, images and fonts (no other files, no links), up to IMPORT_LIMIT in total.
+function copyThemeFiles(src, dest, manifest) {
+  let total = 0;
+  const walk = (from, to, depth) => {
+    fs.mkdirSync(to, { recursive: true });
+    for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
+      const a = path.join(from, entry.name);
+      const b = path.join(to, entry.name);
+      if (entry.isDirectory()) {
+        if (depth < 4 && !entry.name.startsWith('.') && entry.name !== 'node_modules') walk(a, b, depth + 1);
+      } else if (entry.isFile() && THEME_FILES.has(path.extname(entry.name).slice(1).toLowerCase()) && !(depth === 0 && entry.name === manifest)) {
+        total += fs.statSync(a).size;
+        if (total > IMPORT_LIMIT) throw new Error('The theme is too big.');
+        fs.copyFileSync(a, b);
+      }
+    }
+  };
+  try {
+    walk(src, dest, 0);
+  } catch (e) {
+    fs.rmSync(dest, { recursive: true, force: true });
+    throw e;
+  }
+}
+
+// The folder holding the user's themes (created if missing).
+function userFolder() {
+  fs.mkdirSync(userDir(), { recursive: true });
+  return userDir();
+}
+
 // Lets the user pick an image or font and copies it into the theme's assets folder.
 async function importAsset(win, { id, kind = 'image' }) {
   const dir = writableDir(id);
@@ -272,6 +375,6 @@ function handleProtocol() {
 }
 
 module.exports = {
-  listThemes, readTheme, saveTheme, createTheme, deleteTheme, importAsset, themeDir, migrateUserThemes, splitVariants, formatJson,
+  listThemes, readTheme, saveTheme, createTheme, deleteTheme, importThemes, importFiles, userFolder, importAsset, themeDir, migrateUserThemes, splitVariants, formatJson,
   listSites, registerScheme, handleProtocol,
 };

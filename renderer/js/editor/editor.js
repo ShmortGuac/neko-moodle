@@ -81,6 +81,11 @@ const Editor = {
     neko.loginSSO = previewOnly('Signing in');
     neko.createTheme = previewOnly('Creating themes');
     neko.deleteTheme = previewOnly('Deleting themes');
+    neko.importThemes = previewOnly('Importing themes');
+    neko.openThemesFolder = async () => {};
+    neko.downloadFolder = async () => ({ folder: 'C:\\Users\\you\\Downloads\\NEKO', custom: false, default: 'C:\\Users\\you\\Downloads\\NEKO' });
+    neko.chooseDownloadFolder = previewOnly('Changing the download folder');
+    neko.resetDownloadFolder = previewOnly('Changing the download folder');
     neko.openEditor = previewOnly('Opening the editor');
     neko.openExternal = async () => toast('Preview only', { message: 'Links don\'t open from the preview.' });
     neko.openDownloads = async () => {};

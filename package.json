@@ -1,7 +1,7 @@
 {
   "name": "neko",
   "productName": "NEKO",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "NEKO is a Moodle Client for desktops with supports for themes and customizability.",
   "main": "main.js",
   "private": true,
