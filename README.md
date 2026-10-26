@@ -82,3 +82,11 @@ const grades = await App.call('gradereport_overview_get_course_grades', {});
 
 - NEKO is unofficial and not affiliated with Moodle HQ or any institution.
 - Be gentle with the server: the app only fetches when you open a page or press refresh.
+
+## License
+
+NEKO is free software, licensed under the [GNU General Public License v3.0 or later](LICENSE).
+You can use, change and share it; if you share a changed version, its source must be available under the same license.
+
+Themes you make are your own: a theme is data (JSON, CSS, images and fonts) that NEKO reads, and you choose how to
+license it.
