@@ -1,0 +1,157 @@
+---
+// A small live mock of NEKO's dashboard (HTML and CSS, sample data). The buttons under it swap its theme,
+// the same way themes restyle the real app. Default Light and Dark use the app's own colours; the others
+// are examples of themes people can make.
+import Icon from './Icon.astro';
+import { Image } from 'astro:assets';
+import icon from '../assets/icon.png';
+
+const themes = [
+  { id: 'light', name: 'Default Light', swatch: ['#f3f4f9', '#4f5fe8', '#1f9e93'] },
+  { id: 'dark', name: 'Default Dark', swatch: ['#15171f', '#8a96ff', '#4fd1c5'] },
+  { id: 'sakura', name: 'Sakura', swatch: ['#fff4f7', '#e2557f', '#f2a541'] },
+  { id: 'forest', name: 'Forest', swatch: ['#10201a', '#5fcf8f', '#e0c35a'] },
+];
+const due = [
+  { day: '24', mon: 'OCT', title: 'Reading quiz closes', course: 'Academic Writing', tag: 'Overdue', kind: 'bad' },
+  { day: '27', mon: 'OCT', title: 'Lab 3 report is due', course: 'Data Structures', tag: 'in 5 hours', kind: 'soon' },
+  { day: '31', mon: 'OCT', title: 'Project proposal is due', course: 'Software Engineering', tag: 'in 4 days', kind: '' },
+];
+---
+
+<div class="mock-wrap">
+  <div class="mock" data-theme="light" id="mock" role="img" aria-label="NEKO's dashboard with sample data">
+    <div class="mock__bar"><i></i><i></i><i></i><span>NEKO</span></div>
+    <div class="mock__body">
+      <aside class="mock__side">
+        <div class="mock__brand"><Image src={icon} alt="" width={28} height={28} densities={[1, 2]} loading="eager" /><b>NEKO</b></div>
+        <span class="mock__nav is-on"><Icon name="home" />Dashboard</span>
+        <span class="mock__nav"><Icon name="book" />Courses</span>
+        <span class="mock__nav"><Icon name="clock" />Deadlines<em>5</em></span>
+        <span class="mock__nav"><Icon name="bell" />Announcements<em>2</em></span>
+      </aside>
+      <div class="mock__main">
+        <div class="mock__hero">
+          <small>Good morning!</small>
+          <b>Hi, Alex</b>
+          <span>3 things due this week</span>
+        </div>
+        <div class="mock__grid">
+          <div class="mock__card">
+            <div class="mock__title"><Icon name="clock" />Due soon</div>
+            {due.map((d) => (
+              <div class="mock__due">
+                <div class="mock__date"><b>{d.day}</b><small>{d.mon}</small></div>
+                <div class="mock__what"><b>{d.title}</b><small>{d.course}</small></div>
+                <span class:list={['mock__tag', d.kind && `mock__tag--${d.kind}`]}>{d.tag}</span>
+              </div>
+            ))}
+          </div>
+          <div class="mock__card mock__stats">
+            <div><b>6</b><small>Courses</small></div>
+            <div><b>3</b><small>This week</small></div>
+            <div><b>1</b><small>Overdue</small></div>
+            <div><b>46%</b><small>Progress</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mock-themes" role="group" aria-label="Try a theme">
+    {themes.map((t, i) => (
+      <button type="button" data-mock-theme={t.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+        <span class="mock-themes__sw">{t.swatch.map((c) => <i style={`background:${c}`}></i>)}</span>
+        {t.name}
+      </button>
+    ))}
+  </div>
+</div>
+
+<script>
+  const mock = document.getElementById('mock');
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-mock-theme]');
+  buttons.forEach((b) => b.addEventListener('click', () => {
+    if (mock) mock.dataset.theme = b.dataset.mockTheme;
+    buttons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+</script>
+
+<style>
+  .mock-wrap { display: grid; gap: 16px; min-width: 0; }
+  .mock {
+    --m-bg: #f3f4f9; --m-surface: #fff; --m-surface-2: #f6f7fb; --m-side: rgba(255, 255, 255, 0.85); --m-text: #1d2033; --m-muted: #6b6f86;
+    --m-primary: #4f5fe8; --m-primary-ink: #fff; --m-accent: #1f9e93; --m-bad: #d9415f; --m-warn: #d9861f; --m-border: rgba(29, 32, 51, 0.09);
+    --m-hero: #5b6af0; --m-hero-ink: #fff; --m-radius: 16px;
+    border-radius: 18px; overflow: hidden; background: var(--m-bg); color: var(--m-text);
+    box-shadow: var(--shadow); border: 1px solid var(--border); font-size: 12px; line-height: 1.35;
+    transition: background 0.3s, color 0.3s;
+  }
+  .mock[data-theme="dark"] {
+    --m-bg: #15171f; --m-surface: #1e212c; --m-surface-2: #252937; --m-side: rgba(20, 22, 30, 0.9); --m-text: #eceef6; --m-muted: #9a9fb5;
+    --m-primary: #8a96ff; --m-primary-ink: #121420; --m-accent: #4fd1c5; --m-bad: #ff6b81; --m-warn: #f5b14c; --m-border: rgba(255, 255, 255, 0.08);
+    --m-hero: #3c3f9e;
+  }
+  .mock[data-theme="sakura"] {
+    --m-bg: #fff4f7; --m-surface: #fff; --m-surface-2: #fff0f4; --m-side: #ffe6ee; --m-text: #3a1f2b; --m-muted: #8c6474;
+    --m-primary: #e2557f; --m-primary-ink: #fff; --m-accent: #f2a541; --m-bad: #d6334f; --m-warn: #e08a1e; --m-border: rgba(226, 85, 127, 0.16);
+    --m-hero: #d94a78; --m-radius: 22px;
+  }
+  .mock[data-theme="forest"] {
+    --m-bg: #10201a; --m-surface: #172c24; --m-surface-2: #1d362c; --m-side: #0c1914; --m-text: #e6f2ea; --m-muted: #93b3a1;
+    --m-primary: #5fcf8f; --m-primary-ink: #0c1914; --m-accent: #e0c35a; --m-bad: #ff7a6b; --m-warn: #e0c35a; --m-border: rgba(255, 255, 255, 0.07);
+    --m-hero: #1f6b4a; --m-radius: 10px;
+  }
+  .mock__bar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--m-side); border-bottom: 1px solid var(--m-border); }
+  .mock__bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--m-border); }
+  .mock__bar span { margin-left: 8px; font-weight: 700; color: var(--m-muted); }
+  .mock__body { display: grid; grid-template-columns: 150px minmax(0, 1fr); min-height: 330px; }
+  .mock__side { padding: 14px 10px; background: var(--m-side); border-right: 1px solid var(--m-border); display: grid; align-content: start; gap: 4px; }
+  .mock__brand { display: flex; align-items: center; gap: 8px; padding: 0 6px 12px; font-size: 14px; }
+  .mock__brand img { border-radius: 8px; }
+  .mock__nav { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: calc(var(--m-radius) * 0.6); color: var(--m-muted); font-weight: 600; }
+  .mock__nav :global(svg) { width: 14px; height: 14px; flex: none; }
+  .mock__nav em { margin-left: auto; font-style: normal; font-size: 10px; min-width: 17px; height: 17px; display: grid; place-items: center; border-radius: 99px; background: var(--m-primary); color: var(--m-primary-ink); }
+  .mock__nav.is-on { background: var(--m-primary); color: var(--m-primary-ink); }
+  .mock__main { padding: 14px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .mock__hero { padding: 16px 18px; border-radius: var(--m-radius); background: var(--m-hero); color: var(--m-hero-ink); display: grid; gap: 2px; }
+  .mock__hero small { opacity: 0.85; }
+  .mock__hero b { font-size: 20px; }
+  .mock__hero span { opacity: 0.9; }
+  .mock__grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 12px; }
+  .mock__card { background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+  .mock__title { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+  .mock__title :global(svg) { width: 14px; height: 14px; color: var(--m-primary); }
+  .mock__due { display: flex; align-items: center; gap: 8px; padding: 7px; border-radius: calc(var(--m-radius) * 0.6); background: var(--m-surface-2); min-width: 0; }
+  .mock__date { flex: none; width: 34px; height: 34px; border-radius: 9px; background: var(--m-primary); color: var(--m-primary-ink); display: grid; place-items: center; align-content: center; line-height: 1; }
+  .mock__date b { font-size: 13px; }
+  .mock__date small { font-size: 8px; font-weight: 700; }
+  .mock__what { display: grid; min-width: 0; }
+  .mock__what b, .mock__what small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mock__what small { color: var(--m-muted); }
+  .mock__tag { margin-left: auto; flex: none; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 99px; background: var(--m-border); color: var(--m-muted); }
+  .mock__tag--bad { color: var(--m-bad); }
+  .mock__tag--soon { color: var(--m-warn); }
+  .mock__stats { grid-template-columns: 1fr 1fr; }
+  .mock__stats div { padding: 10px; border-radius: calc(var(--m-radius) * 0.6); background: var(--m-surface-2); display: grid; }
+  .mock__stats b { font-size: 18px; color: var(--m-primary); }
+  .mock__stats small { color: var(--m-muted); }
+
+  .mock-themes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .mock-themes button {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 14px 0 8px;
+    border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
+  }
+  .mock-themes button:hover { transform: translateY(-1px); }
+  .mock-themes button[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+  .mock-themes__sw { display: inline-flex; }
+  .mock-themes__sw i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--surface); margin-left: -5px; }
+  .mock-themes__sw i:first-child { margin-left: 0; }
+
+  @media (max-width: 560px) {
+    .mock__body { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+    .mock__side { display: none; }
+    .mock__grid { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

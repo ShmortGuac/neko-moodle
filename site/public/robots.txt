@@ -1,0 +1,6 @@
+# Crawlers only read robots.txt at the root of a domain. Under shmortguac.github.io/neko-moodle/ this file
+# isn't used; it takes effect once the site has its own domain (then update the Sitemap line to match).
+User-agent: *
+Allow: /
+
+Sitemap: https://shmortguac.github.io/neko-moodle/sitemap-index.xml

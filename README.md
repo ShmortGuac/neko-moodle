@@ -6,6 +6,8 @@ NEKO is a Moodle Client for desktops with supports for themes and customizabilit
 It talks to Moodle through the same web services the official mobile app uses, so it works with any site that has
 mobile app access enabled. Built with Electron.
 
+**Website:** https://shmortguac.github.io/neko-moodle/ · **Download:** [latest release](https://github.com/ShmortGuac/neko-moodle/releases/latest)
+
 ## Run it
 
 ```
@@ -71,6 +73,7 @@ src/sso.js         SSO login via admin/tool/mobile/launch.php → moodlemobile:/
 src/session.js     Encrypted token storage
 src/downloads.js   File downloads and the PDF viewer's temporary copies
 src/updates.js     Update checks and downloads from GitHub Releases
+site/              The website (Astro), published to GitHub Pages; see site/README.md
 src/packs.js       Loads theme packs and site profiles, serves theme:// files
 preload.js         Safe bridge exposed to the UI
 renderer/js/       theme.js (theme engine), site.js (profiles), app.js (core), views/ (pages)

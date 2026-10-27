@@ -1,0 +1,183 @@
+---
+// Page shell: head tags, colour tokens (light and dark, with a saved choice from the toggle) and base styles.
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const pageUrl = new URL(base, Astro.site).href;
+const ogImage = new URL(`${base}og.png`, Astro.site).href;
+const REPO = 'https://github.com/ShmortGuac/neko-moodle';
+
+// Structured data for search engines: NEKO as a free Windows app.
+const appData = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'NEKO',
+  description,
+  url: pageUrl,
+  image: ogImage,
+  screenshot: ogImage,
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Windows 10, Windows 11',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  downloadUrl: `${REPO}/releases/latest`,
+  license: 'https://www.gnu.org/licenses/gpl-3.0.html',
+  isAccessibleForFree: true,
+  sameAs: [REPO],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#fbfbfc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141826" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      // A light/dark choice made with the toggle, applied before the page draws so it doesn't flash.
+      try {
+        const saved = localStorage.getItem('neko-site-theme');
+        if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
+      } catch {}
+    </script>
+    <link rel="icon" href={`${base}favicon.ico`} sizes="any" />
+    <link rel="icon" type="image/png" href={`${base}icon.png`} />
+    <link rel="canonical" href={pageUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:site_name" content="NEKO" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="NEKO: Moodle on your desktop, your way. Free, open source, for Windows." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="sitemap" href={`${base}sitemap-index.xml`} />
+    <script type="application/ld+json" set:html={JSON.stringify(appData)} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  /* Flat colours, no gradients. Light: near-white with soft aqua (#C6EEF2) and soft pink (#FFD3E5); deeper pink and aqua for text and buttons.
+     Dark: deep navy with the same pink and aqua as accents. The toggle sets data-theme on <html>;
+     without a choice the system setting decides. */
+  :root {
+    --bg: #fbfbfc;
+    --surface: #ffffff;
+    --surface-2: #f4fbfc;
+    --tint: #ebf8fa;
+    --hero-bg: #fff0f6;
+    --aqua-soft: #c6eef2;
+    --pink-soft: #ffd3e5;
+    --text: #2b2440;
+    --muted: #66607a;
+    --primary: #c23a74;
+    --primary-2: #e4729f;
+    --primary-ink: #ffffff;
+    --accent: #137d8b;
+    --purple: #7d5ccf;
+    --border: rgba(43, 36, 64, 0.1);
+    --shadow: 0 24px 60px -30px rgba(120, 60, 100, 0.4);
+    --shadow-sm: 0 6px 18px -10px rgba(120, 60, 100, 0.3);
+    --radius: 24px;
+    --radius-sm: 14px;
+    --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141826;
+      --surface: #1c2133;
+      --surface-2: #20263a;
+      --tint: #17202e;
+    --hero-bg: #1b2033;
+      --aqua-soft: rgba(127, 219, 230, 0.16);
+      --pink-soft: rgba(255, 143, 191, 0.16);
+      --text: #eef0f8;
+      --muted: #a7a3bd;
+      --primary: #ff8fbf;
+      --primary-2: #ffb3d4;
+      --primary-ink: #141826;
+      --accent: #7fdbe6;
+      --purple: #c4a8ff;
+      --border: rgba(255, 255, 255, 0.09);
+      --shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.8);
+      --shadow-sm: 0 8px 20px -10px rgba(0, 0, 0, 0.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141826;
+    --surface: #1c2133;
+    --surface-2: #20263a;
+    --tint: #17202e;
+    --hero-bg: #1b2033;
+    --aqua-soft: rgba(127, 219, 230, 0.16);
+    --pink-soft: rgba(255, 143, 191, 0.16);
+    --text: #eef0f8;
+    --muted: #a7a3bd;
+    --primary: #ff8fbf;
+    --primary-2: #ffb3d4;
+    --primary-ink: #141826;
+    --accent: #7fdbe6;
+    --purple: #c4a8ff;
+    --border: rgba(255, 255, 255, 0.09);
+    --shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.8);
+    --shadow-sm: 0 8px 20px -10px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: var(--primary); }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  p { margin: 0; }
+  :focus-visible { outline: 3px solid var(--primary-2); outline-offset: 3px; border-radius: 6px; }
+
+  .wrap { width: min(1120px, 100% - 32px); margin-inline: auto; }
+  .section { padding: 88px 0; }
+  .section__head { max-width: 640px; margin-bottom: 40px; }
+  .eyebrow { display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); margin-bottom: 12px; }
+  .section__head h2 { font-size: clamp(28px, 4vw, 40px); }
+  .section__head p { margin-top: 14px; color: var(--muted); font-size: 17px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1px solid transparent;
+    font: inherit; font-weight: 700; font-size: 15px; text-decoration: none; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .btn--primary { background: var(--primary); color: var(--primary-ink); box-shadow: 0 10px 24px -12px var(--primary); }
+  .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -12px var(--primary); }
+  .btn--ghost { background: var(--surface); color: var(--text); border-color: var(--border); }
+  .btn--ghost:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+  .btn--sm { min-height: 38px; padding: 0 16px; font-size: 14px; }
+
+  @media (max-width: 720px) { .section { padding: 64px 0; } }
+</style>

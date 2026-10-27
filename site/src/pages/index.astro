@@ -1,0 +1,337 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import AppMock from '../components/AppMock.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import Gallery from '../components/Gallery.astro';
+import { Image } from 'astro:assets';
+import icon from '../assets/icon.png';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const REPO = 'https://github.com/ShmortGuac/neko-moodle';
+const LATEST = `${REPO}/releases/latest`;
+
+const features = [
+  { icon: 'home', title: 'Dashboard', text: 'What’s due soon, the latest announcements and your recent courses, all on one screen.' },
+  { icon: 'book', title: 'Courses and files', text: 'Sections, activities and files. Download one file or a whole course, and skip what you already have.' },
+  { icon: 'file', title: 'PDFs, pages and books', text: 'Read lecture notes inside NEKO, with zoom, search and print. Download is always there too.' },
+  { icon: 'upload', title: 'Assignments', text: 'Instructions, due dates, grades and feedback. Add files or text, save a draft and submit for grading.' },
+  { icon: 'chat', title: 'Forums and announcements', text: 'Threaded discussions with attachments. Reply or start a discussion, and see every course’s news in one feed.' },
+  { icon: 'lesson', title: 'Lessons', text: 'Content pages and questions one page at a time, with feedback, time limits and your summary.' },
+  { icon: 'clock', title: 'Deadlines', text: 'Overdue, today, tomorrow, this week and later, so nothing sneaks up on you.' },
+  { icon: 'refresh', title: 'Updates built in', text: 'NEKO tells you when a new version is out, shows what’s new and installs it when you say so.' },
+] as const;
+
+const faq = [
+  {
+    q: 'Does NEKO work with my school’s Moodle?',
+    a: 'Most likely. NEKO uses the same web services as the official Moodle mobile app, so if the Moodle app works for your school, NEKO should too. You can sign in with a username and password, or through your school’s sign-in page in the browser.',
+  },
+  {
+    q: 'Is NEKO official?',
+    a: 'No. NEKO is an independent, open-source project. It isn’t made by or affiliated with Moodle HQ or any school or university.',
+  },
+  {
+    q: 'Windows says “Windows protected your PC”. Is it safe?',
+    a: 'That warning appears because NEKO isn’t code-signed yet (signing is planned). Click More info → Run anyway. All of NEKO’s code is public on GitHub if you’d like to check it.',
+  },
+  {
+    q: 'Is it free?',
+    a: 'Yes. NEKO is free and open source under the GNU GPL v3. There are no ads and no accounts.',
+  },
+  {
+    q: 'Can I make my own theme?',
+    a: 'Yes. The built-in theme editor has a live preview of the real pages. Change colours, fonts, backgrounds and pictures, then export your theme as a .zip to share it.',
+  },
+  {
+    q: 'What about macOS and Linux?',
+    a: 'NEKO is Windows-only for now (Windows 10 and 11). Other systems are on the roadmap.',
+  },
+];
+---
+
+<Base
+  title="NEKO: a desktop app for Moodle with themes"
+  description="NEKO is a free, open-source Windows app for Moodle: courses, files, assignments, forums and deadlines in one place, styled with themes you can make yourself."
+>
+  <header class="top">
+    <div class="wrap top__inner">
+      <a class="logo" href={base}>
+        <Image src={icon} alt="" width={36} height={36} densities={[1, 2]} loading="eager" />
+        <span>NEKO</span>
+      </a>
+      <nav class="top__nav" aria-label="Sections">
+        <a href="#screenshots">Screenshots</a>
+        <a href="#features">Features</a>
+        <a href="#themes">Themes</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="top__actions">
+        <ThemeToggle />
+        <a class="btn btn--ghost btn--sm" href={REPO}><Icon name="github" />GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero__inner">
+        <div class="hero__text">
+          <span class="eyebrow">Free · open source · for Windows</span>
+          <h1>Moodle, on your desktop, <span class="key">your way</span>.</h1>
+          <p class="hero__lead">
+            NEKO is a desktop app for Moodle. Your courses, files, assignments, forums and deadlines are in one fast
+            window, and themes let you make it look however you like.
+          </p>
+          <div class="hero__cta">
+            <a class="btn btn--primary" href={LATEST} data-download><Icon name="download" /><span data-download-label>Download for Windows</span></a>
+            <a class="btn btn--ghost" href={REPO}><Icon name="github" />View on GitHub</a>
+          </div>
+          <p class="hero__meta"><span data-version>Latest version</span> · Windows 10 and 11 · <a href={LATEST}>Portable version</a></p>
+        </div>
+        <div class="hero__visual"><AppMock /></div>
+      </div>
+    </section>
+
+    <section class="section" id="screenshots">
+      <div class="wrap">
+        <div class="section__head">
+          <span class="eyebrow">Screenshots</span>
+          <h2>See it in action</h2>
+          <p>The same app in three themes: the built-in Default Light and Default Dark, and Sakura, made in the theme editor.</p>
+        </div>
+        <Gallery />
+      </div>
+    </section>
+
+    <section class="section section--tint" id="features">
+      <div class="wrap">
+        <div class="section__head">
+          <span class="eyebrow">Features</span>
+          <h2>Everything you open Moodle for</h2>
+          <p>NEKO keeps the things you do every day close at hand, and opens anything else in a signed-in Moodle window.</p>
+        </div>
+        <div class="features">
+          {features.map((f) => (
+            <article class="feature">
+              <span class="feature__icon"><Icon name={f.icon} /></span>
+              <h3>{f.title}</h3>
+              <p>{f.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="themes">
+      <div class="wrap split">
+        <div class="section__head">
+          <span class="eyebrow">Themes</span>
+          <h2>Make it look like yours</h2>
+          <p>Every colour, font, corner and background is up to you. Try a few on the app above, then make your own.</p>
+        </div>
+        <ul class="ticks">
+          <li><Icon name="palette" /><div><b>Theme editor with a live preview</b><span>Edit a theme while seeing the real pages with sample data. Guides and a grid help you place pictures.</span></div></li>
+          <li><Icon name="sparkle" /><div><b>Pictures, mascots and decorations</b><span>Add a banner, a login background, a sidebar mascot and your own wording.</span></div></li>
+          <li><Icon name="upload" /><div><b>Share themes as a .zip</b><span>Export a theme for friends, and import theirs in one click. Nothing you have is overwritten.</span></div></li>
+          <li><Icon name="code" /><div><b>Just files</b><span>A theme is a <code>theme.json</code>, some optional CSS and pictures. No code runs, so themes are safe to share.</span></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="privacy">
+      <div class="wrap">
+        <div class="section__head">
+          <span class="eyebrow">Privacy</span>
+          <h2>Your data stays on your PC</h2>
+        </div>
+        <div class="privacy">
+          <div class="privacy__item"><Icon name="lock" /><b>Encrypted sign-in</b><p>Your Moodle sign-in is stored encrypted on your own computer, using Windows’ built-in protection.</p></div>
+          <div class="privacy__item"><Icon name="eyeOff" /><b>No tracking</b><p>No analytics and no accounts. NEKO talks only to your Moodle site, and to GitHub to check for updates (you can turn that off).</p></div>
+          <div class="privacy__item"><Icon name="code" /><b>Open source</b><p>Every line of NEKO is public under the GPL v3, so anyone can check what it does.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="wrap faq-wrap">
+        <div class="section__head">
+          <span class="eyebrow">FAQ</span>
+          <h2>Questions</h2>
+          <p>Something else? Ask in <a href={`${REPO}/discussions`}>Discussions</a>.</p>
+        </div>
+        <div class="faq">
+          {faq.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <div class="faq__body"><p>{f.a}</p></div>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta">
+      <div class="wrap cta__box">
+        <Image src={icon} alt="" width={72} height={72} densities={[1, 2]} />
+        <h2>Try NEKO</h2>
+        <p>Free for Windows 10 and 11. Sign in with your Moodle account and you’re set.</p>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href={LATEST} data-download><Icon name="download" /><span data-download-label>Download for Windows</span></a>
+          <a class="btn btn--ghost" href={`${REPO}/blob/main/ROADMAP.md`}>See the roadmap</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot__inner">
+      <p>NEKO is free software under the <a href={`${REPO}/blob/main/LICENSE`}>GNU GPL v3</a>. It’s an independent project and isn’t affiliated with Moodle HQ or any school or university. Moodle is a trademark of Moodle Pty Ltd.</p>
+      <nav aria-label="Links">
+        <a href={REPO}>GitHub</a>
+        <a href={`${REPO}/releases`}>Releases</a>
+        <a href={`${REPO}/discussions`}>Discussions</a>
+        <a href={`${REPO}/issues`}>Report a bug</a>
+      </nav>
+    </div>
+  </footer>
+</Base>
+
+<script>
+  // FAQ: answers slide open and closed. Clicking again mid-way reverses from where it is.
+  // Without animations (reduced motion, or no Web Animations), details opens and closes as usual.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  document.querySelectorAll<HTMLDetailsElement>('.faq details').forEach((d) => {
+    const summary = d.querySelector('summary');
+    const body = d.querySelector<HTMLElement>('.faq__body');
+    if (!summary || !body) return;
+    let anim: Animation | null = null;
+    // Opened another way (find-in-page, no animation): keep the icon in step. Ignored while sliding.
+    d.addEventListener('toggle', () => { if (!anim) d.classList.toggle('is-open', d.open); });
+    summary.addEventListener('click', (e) => {
+      if (reduce.matches || !body.animate) return;
+      e.preventDefault();
+      const opening = !d.classList.contains('is-open');
+      const from = anim ? body.getBoundingClientRect().height : opening ? 0 : body.scrollHeight;
+      anim?.cancel();
+      d.classList.toggle('is-open', opening);
+      if (opening) d.open = true;
+      const to = opening ? body.scrollHeight : 0;
+      anim = body.animate(
+        [{ height: `${from}px`, opacity: opening ? 0 : 1 }, { height: `${to}px`, opacity: opening ? 1 : 0 }],
+        { duration: 260, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' },
+      );
+      anim.onfinish = () => {
+        anim = null;
+        if (!opening) d.open = false;
+      };
+    });
+  });
+
+  // Point the Download buttons at the newest installer and show its version. Without this
+  // (offline, blocked, rate-limited), the buttons still go to the latest release page.
+  const API = 'https://api.github.com/repos/ShmortGuac/neko-moodle/releases/latest';
+  fetch(API, { headers: { Accept: 'application/vnd.github+json' } })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((rel) => {
+      const version = String(rel.tag_name || '').replace(/^v/, '');
+      const assets: { name: string; browser_download_url: string }[] = Array.isArray(rel.assets) ? rel.assets : [];
+      const setup = assets.find((a) => /^NEKO-Setup-.+\.exe$/i.test(a.name));
+      const portable = assets.find((a) => /portable\.exe$/i.test(a.name));
+      if (setup) document.querySelectorAll<HTMLAnchorElement>('[data-download]').forEach((a) => { a.href = setup.browser_download_url; });
+      if (version) {
+        document.querySelectorAll('[data-download-label]').forEach((s) => { s.textContent = `Download NEKO ${version}`; });
+        document.querySelectorAll('[data-version]').forEach((s) => { s.textContent = `Version ${version}`; });
+      }
+      const p = document.querySelector<HTMLAnchorElement>('.hero__meta a');
+      if (p && portable) p.href = portable.browser_download_url;
+    })
+    .catch(() => {});
+</script>
+
+<style>
+  .top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .top__inner { display: flex; align-items: center; gap: 24px; min-height: 64px; }
+  .top__actions { display: flex; align-items: center; gap: 10px; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 800; font-size: 18px; letter-spacing: 0.02em; }
+  .logo img { border-radius: 10px; }
+  .top__nav { display: flex; gap: 22px; margin-left: auto; }
+  .top__nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 15px; }
+  .top__nav a:hover { color: var(--text); }
+
+  .hero { padding: 72px 0 88px; background: var(--hero-bg); border-bottom: 1px solid var(--border); }
+  /* A flat aqua block behind the app mock */
+  .hero__visual { position: relative; min-width: 0; }
+  .hero__visual::before { content: ""; position: absolute; inset: 28px -20px -24px 36px; border-radius: 28px; background: var(--aqua-soft); }
+  .hero__visual > :global(*) { position: relative; }
+  .hero__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 56px; align-items: center; }
+  .hero h1 { font-size: clamp(38px, 5.6vw, 62px); font-weight: 800; }
+  .key { color: var(--primary); }
+  .hero__lead { margin-top: 20px; font-size: 18px; color: var(--muted); max-width: 520px; }
+  .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .hero__meta { margin-top: 16px; font-size: 14px; color: var(--muted); }
+
+  .features { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+  .feature { padding: 22px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+  .feature__icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--pink-soft); color: var(--primary); }
+  .feature__icon :global(svg) { width: 22px; height: 22px; }
+  .feature h3 { margin-top: 16px; font-size: 17px; }
+  .feature p { margin-top: 8px; color: var(--muted); font-size: 14.5px; }
+
+  .section--tint { background: var(--tint); border-block: 1px solid var(--border); }
+  .split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 48px; align-items: start; }
+  .split .section__head { margin-bottom: 0; }
+  .ticks { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .ticks li { display: flex; gap: 16px; padding: 18px 20px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); }
+  .ticks li > :global(svg) { width: 24px; height: 24px; flex: none; color: var(--primary); margin-top: 2px; }
+  .ticks b { display: block; }
+  .ticks span { color: var(--muted); font-size: 14.5px; }
+  code { font-family: Consolas, "Cascadia Code", ui-monospace, monospace; font-size: 0.92em; padding: 1px 5px; border-radius: 5px; background: var(--surface-2); }
+
+  .privacy { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .privacy__item { padding: 24px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: grid; gap: 8px; align-content: start; }
+  .privacy__item :global(svg) { width: 46px; height: 46px; padding: 11px; border-radius: 12px; background: var(--aqua-soft); color: var(--accent); }
+  .privacy__item b { font-size: 17px; }
+  .privacy__item p { color: var(--muted); font-size: 14.5px; }
+
+  .faq-wrap { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 48px; align-items: start; }
+  .faq-wrap .section__head { margin-bottom: 0; }
+  .faq { display: grid; gap: 10px; }
+  .faq details { border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); }
+  .faq summary { cursor: pointer; list-style: none; padding: 18px 52px 18px 20px; font-weight: 700; position: relative; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 22px; font-weight: 400; color: var(--muted); transition: transform 0.25s ease, color 0.25s; }
+  .faq details { transition: border-color 0.25s; }
+  /* is-open turns on when the click starts, so the icon turns while the answer slides */
+  .faq details.is-open { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+  .faq details.is-open summary::after { transform: translateY(-50%) rotate(45deg); color: var(--primary); }
+  .faq__body { overflow: hidden; }
+  .faq details p { padding: 0 20px 18px; color: var(--muted); }
+
+  .cta__box { text-align: center; display: grid; justify-items: center; gap: 12px; padding: 56px 24px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .cta__box img { border-radius: 18px; }
+  .cta__box h2 { font-size: clamp(28px, 4vw, 40px); margin-top: 6px; }
+  .cta__box p { color: var(--muted); font-size: 17px; }
+  .cta__box .hero__cta { justify-content: center; margin-top: 12px; }
+
+  .foot { padding: 32px 0 48px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+  .foot__inner { display: flex; gap: 24px 40px; justify-content: space-between; flex-wrap: wrap; }
+  .foot p { max-width: 640px; }
+  .foot nav { display: flex; gap: 18px; flex-wrap: wrap; }
+  .foot a { color: var(--muted); }
+  .foot a:hover { color: var(--text); }
+
+  @media (max-width: 980px) {
+    .hero__inner, .split, .faq-wrap { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+    .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .privacy { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 720px) {
+    .hero__visual::before { inset: 20px -8px -16px 20px; }
+    .top__nav { display: none; }
+    .top__inner { justify-content: space-between; }
+    .hero { padding: 48px 0 64px; }
+    .features { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
