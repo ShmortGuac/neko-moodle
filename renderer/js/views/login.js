@@ -110,7 +110,7 @@ Views.login = {
       } catch {
         // invalid address: the login attempt will show a proper error
       }
-      if (id !== probeId || !config) return; // a newer lookup took over
+      if (id !== probeId || !config || !$('#siteLine', root)) return; // a newer lookup took over, or already signed in
       publicConfig = config;
       $('#siteLine', root).textContent = subtitleFor(stripHtml(publicConfig.sitename));
       if (publicConfig.typeoflogin === 1) pwBox.open = true;

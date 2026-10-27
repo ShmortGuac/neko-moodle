@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('nekoBridge', {
   openWeb: call('web:open'),
 
   download: call('file:download'),
+  previewFile: call('file:preview'),
   openPath: call('file:open'),
   showInFolder: call('file:show'),
   openDownloads: call('file:open-downloads'),
@@ -39,12 +40,27 @@ contextBridge.exposeInMainWorld('nekoBridge', {
   deleteTheme: call('theme:delete'),
   importThemes: call('themes:import'),
   openThemesFolder: call('themes:open-folder'),
+  exportTheme: call('theme:export'),
   importThemeAsset: call('theme:asset'),
   revealTheme: call('theme:reveal'),
   openEditor: call('editor:open'),
   // Not wrapped by api.js: subscribes to theme changes saved in any window.
   onThemesChanged: (cb) => { ipcRenderer.on('themes:changed', () => cb()); },
   listSites: call('sites:list'),
+
+  updateStatus: call('updates:status'),
+  checkForUpdates: call('updates:check'),
+  whatsNew: call('updates:whats-new'),
+  justUpdated: call('updates:just-updated'),
+  markUpdateSeen: call('updates:seen'),
+  setAutoUpdateCheck: call('updates:auto'),
+  downloadUpdate: call('updates:download'),
+  installUpdate: call('updates:install'),
+  showUpdateFile: call('updates:show'),
+  openReleasePage: call('updates:page'),
+  // Not wrapped by api.js: a newer version was found / download progress.
+  onUpdateAvailable: (cb) => { ipcRenderer.on('updates:available', (_e, s) => cb(s)); },
+  onUpdateProgress: (cb) => { ipcRenderer.on('updates:progress', (_e, s) => cb(s)); },
 
   setTitlebar: (color, symbolColor) => ipcRenderer.invoke('ui:titlebar', { color, symbolColor }),
 });

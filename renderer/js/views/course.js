@@ -39,6 +39,7 @@ Views.course = {
       let meta = m.modplural || m.modname;
       let actions = '';
       let extra = '';
+      let viewIndex = null; // a PDF file: the name opens it too
 
       if (hidden) {
         meta = stripHtml(m.availabilityinfo) || 'Not available yet';
@@ -46,7 +47,13 @@ Views.course = {
         const f = contents[0];
         const i = addFile(f, [courseFolder, sectionName]);
         meta = [f.filename.split('.').pop().toUpperCase(), fmtSize(f.filesize)].filter(Boolean).join(' · ');
-        actions = `<button class="btn btn--primary btn--sm" data-dl="${i}">${Icons.download} Download</button>`;
+        if (App.isPdf(f)) {
+          viewIndex = i;
+          actions = `<button class="btn btn--primary btn--sm" data-view="${i}">${Icons.eye} View</button>
+            <button class="btn btn--ghost btn--sm" data-dl="${i}">${Icons.download} Download</button>`;
+        } else {
+          actions = `<button class="btn btn--primary btn--sm" data-dl="${i}">${Icons.download} Download</button>`;
+        }
       } else if (m.modname === 'folder' && contents.length) {
         const indices = contents.map((f) => addFile(f, [courseFolder, sectionName, m.name, f.filepath]));
         meta = `${contents.length} file${contents.length > 1 ? 's' : ''}`;
@@ -55,12 +62,13 @@ Views.course = {
           <div class="file">
             <span class="file__name">${esc((f.filepath || '/').slice(1) + f.filename)}</span>
             <span class="file__size">${fmtSize(f.filesize)}</span>
+            ${App.isPdf(f) ? `<button class="btn btn--ghost btn--sm btn--icon" style="width:30px;height:30px" title="View in NEKO" data-view="${indices[k]}">${Icons.eye}</button>` : ''}
             <button class="btn btn--ghost btn--sm btn--icon" style="width:30px;height:30px" title="Download" data-dl="${indices[k]}">${Icons.download}</button>
           </div>`).join('')}</div>`;
       } else if (NATIVE_MODS.has(m.modname)) {
         const desc = stripHtml(m.description);
         if (desc) meta = `${meta} · ${desc.length > 110 ? desc.slice(0, 110) + '…' : desc}`;
-        const openIcon = { forum: Icons.chat, assign: Icons.upload }[m.modname];
+        const openIcon = { forum: Icons.chat, assign: Icons.upload, lesson: Icons.chevron }[m.modname];
         actions = openIcon
           ? `<button class="btn btn--primary btn--sm" data-activity="${m.id}">${openIcon} Open</button>`
           : `<button class="btn btn--primary btn--sm" data-activity="${m.id}">${Icons.book} Read</button>`;
@@ -80,7 +88,7 @@ Views.course = {
         <div class="module ${hidden ? 'is-hidden' : ''}">
           <div class="module__icon">${icon}</div>
           <div style="min-width:0">
-            <div class="module__name ${NATIVE_MODS.has(m.modname) && !hidden ? 'module__name--link' : ''}" ${NATIVE_MODS.has(m.modname) && !hidden ? `data-activity="${m.id}"` : ''}>${esc(stripHtml(m.name))}</div>
+            <div class="module__name ${(NATIVE_MODS.has(m.modname) || viewIndex !== null) && !hidden ? 'module__name--link' : ''}" ${NATIVE_MODS.has(m.modname) && !hidden ? `data-activity="${m.id}"` : ''} ${viewIndex !== null && !hidden ? `data-view="${viewIndex}"` : ''}>${esc(stripHtml(m.name))}</div>
             <div class="module__meta">${esc(meta)}</div>
           </div>
           <div class="module__actions">${actions}</div>
@@ -127,6 +135,11 @@ Views.course = {
       if (activity) return App.navigate('activity', { courseId: course.id, cmid: Number(activity.dataset.activity) });
       const summary = e.target.closest('.section__summary');
       if (summary && !e.target.closest('[data-url]')) summary.classList.toggle('is-open');
+      const view = e.target.closest('[data-view]');
+      if (view) {
+        const { file, folder } = files[Number(view.dataset.view)];
+        return App.viewFile(file, folder);
+      }
       const one = e.target.closest('[data-dl]');
       if (one) {
         const { file, folder } = files[Number(one.dataset.dl)];

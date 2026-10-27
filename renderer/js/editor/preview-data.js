@@ -56,6 +56,69 @@ const PreviewData = {
     if (fn === 'mod_assign_get_submission_status') return PreviewData.submission();
     if (fn === 'mod_forum_get_forum_discussions') return { discussions: PreviewData.discussions(params.forumid) };
     if (fn === 'mod_forum_get_discussion_posts') return PreviewData.posts(params.discussionid);
+    if (fn.startsWith('mod_lesson_')) return PreviewData.lessonWs(fn, params);
+    return {};
+  },
+
+  // A short lesson: a content page, a multiple-choice question, an essay, then the end. The page HTML follows
+  // what Moodle sends (content in .contents, buttons as forms in .branchbuttoncontainer, questions as a form).
+  // Nothing leaves the preview; answers are kept in lessonState so the preview (and tests) can see them.
+  lessonState: { started: 0, last: 0, done: 0, answers: [] },
+
+  lessonWs(fn, p) {
+    const st = PreviewData.lessonState;
+    const now = Math.floor(Date.now() / 1000);
+    const hidden = (pageid, form) => `<input type="hidden" name="id" value="9006"><input type="hidden" name="pageid" value="${pageid}"><input type="hidden" name="sesskey" value="preview">${form ? `<input type="hidden" name="_qf__${form}" value="1">` : ''}`;
+    const button = (pageid, jumpto, label) => `<form method="post" action="https://moodle.example.edu/mod/lesson/continue.php"><div>${hidden(pageid)}<input type="hidden" name="jumpto" value="${jumpto}"><button type="submit" class="btn btn-secondary" id="single_button${pageid}${jumpto}">${label}</button></div></form>`;
+    const pages = {
+      1: { qtype: 20, type: 1, title: 'What is recursion?', html: `<div class="box py-3 contents"><p>A <b>recursive</b> function calls itself on a smaller version of the same problem, until it reaches a case simple enough to answer directly: the <em>base case</em>.</p><pre>int fact(int n) {\n  if (n == 0) return 1;\n  return n * fact(n - 1);\n}</pre></div><div class="branchbuttoncontainer vertical">${button(1, -1, 'Next page')}</div>` },
+      2: { qtype: 3, type: 0, title: 'Base case', html: `<form autocomplete="off" action="https://moodle.example.edu/mod/lesson/continue.php" method="post" accept-charset="utf-8" id="mform1" class="mform"><div style="display: none;">${hidden(2, 'lesson_display_answer_form_multichoice_singleanswer')}</div><fieldset class="clearfix collapsible" id="id_pageheader"><legend class="ftoggler"><a href="#" class="fheader">Base case</a></legend><div class="fcontainer clearfix"><div class="box contents"><p>What is the base case of <code>fact(n)</code>?</p></div>${[[11, 'n == 0, which returns 1'], [12, 'n == 1, which returns 0'], [13, 'There isn\'t one']].map(([id, text]) => `<div class="form-group row fitem"><div class="col-md-3 col-form-label"></div><div class="col-md-9 form-inline felement" data-fieldtype="radio"><div class="form-check"><input type="radio" class="form-check-input" name="answerid" id="id_answerid_${id}" value="${id}"><label class="form-check-label" for="id_answerid_${id}">${text}</label></div></div></div>`).join('')}</div></fieldset><div class="form-group row fitem" id="fitem_id_submitbutton"><div class="col-md-9 felement" data-fieldtype="submit"><input type="submit" class="btn btn-primary" name="submitbutton" id="id_submitbutton" value="Submit"></div></div></form>` },
+      3: { qtype: 10, type: 0, title: 'In your own words', html: `<form autocomplete="off" action="https://moodle.example.edu/mod/lesson/continue.php" method="post" accept-charset="utf-8" id="mform2" class="mform"><div style="display: none;">${hidden(3, 'lesson_display_answer_form_essay')}</div><fieldset class="clearfix" id="id_pageheader"><legend class="ftoggler">In your own words</legend><div class="fcontainer clearfix"><div class="box contents"><p>Explain what would happen if <code>fact</code> had no base case.</p></div><div class="form-group row fitem" id="fitem_id_answer"><div class="col-md-3"><label class="col-form-label d-inline" for="id_answer">Your response</label></div><div class="col-md-9 felement" data-fieldtype="editor"><textarea id="id_answer" name="answer[text]" rows="15" cols="80" spellcheck="true"></textarea><input type="hidden" name="answer[format]" value="1"><input type="hidden" name="answer[itemid]" value="123456"></div></div></div></fieldset><div class="form-group row fitem"><div class="col-md-9 felement" data-fieldtype="submit"><input type="submit" class="btn btn-primary" name="submitbutton" id="id_submitbutton" value="Submit"></div></div></form>` },
+    };
+    const lesson = { id: 700, coursemodule: 9006, course: 101, name: 'Lesson 3: Recursion', intro: '<p>A short walk through recursion, with two questions at the end. About 10 minutes.</p>', grade: 10, practice: false, retake: true, review: true, timelimit: 0, progressbar: true, ongoing: false, available: 0, deadline: now + 3 * 86400 };
+    if (fn === 'mod_lesson_get_lessons_by_courses') return { lessons: [lesson] };
+    if (fn === 'mod_lesson_get_lesson_access_information') return { attemptscount: st.done, lastpageseen: st.last, firstpageid: 1, preventaccessreasons: [], leftduringtimedsession: false };
+    if (fn === 'mod_lesson_get_user_grade') return { grade: 7.5, formattedgrade: '7.50' };
+    if (fn === 'mod_lesson_get_user_timers') return { timers: [] };
+    // Like Moodle: pageid 0 starts an attempt (and its timer); a page id continues one, which needs that timer.
+    if (fn === 'mod_lesson_launch_attempt') {
+      if (p.pageid && !st.timer) throw new Error('could not find lesson_timer records');
+      if (!p.pageid) st.timer = true;
+      st.started++;
+      return { messages: [] };
+    }
+    if (fn === 'mod_lesson_get_page_data') {
+      const page = pages[p.pageid];
+      st.last = p.pageid;
+      return { page: { id: p.pageid, lessonid: 700, qtype: page.qtype, type: page.type, title: page.title }, newpageid: p.pageid, pagecontent: page.html, progress: Math.round(((p.pageid - 1) / 3) * 100), messages: [], ongoingscore: '' };
+    }
+    if (fn === 'mod_lesson_process_page') {
+      const data = Object.fromEntries((p.data || []).map((d) => [d.name, d.value]));
+      st.answers.push({ pageid: p.pageid, data });
+      if (p.pageid === 1) return { newpageid: Number(data.jumpto) === -1 ? 2 : Number(data.jumpto), inmediajump: true, nodefaultresponse: false, messages: [] };
+      const box = '<div class="box generalbox boxaligncenter py-3"><p>(the question again)</p></div>';
+      if (p.pageid === 2) {
+        if (!data.answerid) return { newpageid: 2, noanswer: true, correctanswer: false, feedback: '', messages: [] };
+        const correct = data.answerid === '11';
+        return {
+          newpageid: 3, correctanswer: correct, noanswer: false, isessayquestion: false, maxattemptsreached: false, attemptsremaining: correct ? 0 : 1, messages: [],
+          feedback: `${box}<div class="correctanswer generalbox"><em>Your answer</em> : <div class="studentanswer mt-2 mb-2">${pages[2].html.match(new RegExp(`id_answerid_${data.answerid}">([^<]*)<`))?.[1] || ''}</div><div class="response">${correct ? 'Right: fact(0) is 1, and every other call works its way down to it.' : 'Not quite. Look at the first line of the function.'}</div></div>`,
+        };
+      }
+      return { newpageid: -9, isessayquestion: true, correctanswer: false, noanswer: !(data['answer[text]'] || '').trim(), messages: [],
+        feedback: `${box}<div class="correctanswer generalbox"><em>Your answer</em> : <div class="studentanswer mt-2 mb-2">${data['answer[text]'] || ''}</div></div>` };
+    }
+    if (fn === 'mod_lesson_finish_attempt') {
+      st.done++;
+      st.timer = false;
+      st.last = 0;
+      return { data: [
+        { name: 'gradelesson', value: '1', message: '' },
+        { name: 'numberofcorrectanswers', value: '1', message: 'Number of correct answers: 1' },
+        { name: 'displayscorewithessays', value: '', message: 'You earned 1 out of 1 for the automatically graded questions. Your 1 essay question(s) will be graded and added into your final score at a later date.' },
+        { name: 'progresscompleted', value: '100', message: 'You completed 100% of the lesson' },
+      ], messages: [] };
+    }
     return {};
   },
 
@@ -176,6 +239,7 @@ const PreviewData = {
           { modname: 'url', modplural: 'URLs', name: 'Course GitHub', contents: [{ type: 'url', fileurl: 'https://github.com' }] },
           { id: 9005, modname: 'assign', modplural: 'Assignments', name: 'Assignment 2: Linked lists', description: '<p>Implement a singly linked list.</p>', url: 'https://moodle.example.edu' },
           { modname: 'quiz', modplural: 'Quizzes', name: 'Quiz 1', url: 'https://moodle.example.edu' },
+          { id: 9006, modname: 'lesson', modplural: 'Lessons', name: 'Lesson 3: Recursion', description: '<p>A short walk through recursion.</p>', url: 'https://moodle.example.edu' },
         ],
       },
       {

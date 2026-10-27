@@ -8,7 +8,7 @@ Views.themes = {
   filter: 'all',
 
   // The theme's picture, or a gradient of its swatches for themes without art.
-  // With `details`, themes the user made also get a delete button.
+  // With `details`, every theme gets an export button, and themes the user made a delete button too.
   card(theme, { details = false } = {}) {
     const swatches = theme.swatches || [];
     const preview = theme.preview
@@ -23,8 +23,9 @@ Views.themes = {
         <div class="theme-card__label"><span>${esc(theme.name || theme.id)}</span>${theme.subtitle ? `<small>${esc(theme.subtitle)}</small>` : ''}</div>
         ${details ? `<div class="theme-card__meta"><b>${esc(by)}</b>${theme.description ? ` · ${esc(theme.description)}` : ''}</div>` : ''}
       </button>`;
-    if (!details || theme.source !== 'user') return card;
-    return `<div class="theme-tile">${card}<button class="theme-card__delete" data-delete-theme="${esc(theme.id)}" title="Delete theme">${Icons.trash}</button></div>`;
+    if (!details) return card;
+    const del = theme.source === 'user' ? `<button class="theme-card__action theme-card__action--danger" data-delete-theme="${esc(theme.id)}" title="Delete theme">${Icons.trash}</button>` : '';
+    return `<div class="theme-tile">${card}<div class="theme-card__actions"><button class="theme-card__action" data-export-theme="${esc(theme.id)}" title="Export as .zip">${Icons.download}</button>${del}</div></div>`;
   },
 
   // Asks first; the theme's folder goes to the Recycle Bin. Using it? Switch to Default Light.
@@ -54,6 +55,8 @@ Views.themes = {
     root.addEventListener('click', async (e) => {
       const del = e.target.closest('[data-delete-theme]');
       if (del) return Views.themes.remove(del.dataset.deleteTheme);
+      const exp = e.target.closest('[data-export-theme]');
+      if (exp) return Views.themes.exportTheme(exp.dataset.exportTheme);
       const card = e.target.closest('[data-use-theme]');
       if (!card || card.dataset.useTheme === Theme.pack.id) return;
       const view = $('#view');
@@ -89,6 +92,24 @@ Views.themes = {
       });
     }
     if (res.errors.length) toast(res.ids.length ? 'Some files weren\'t imported' : 'Nothing was imported', { type: 'error', message: res.errors.join(' · '), timeout: 9000 });
+  },
+
+  // Saves the theme as a .zip that Import theme reads back (on this PC or someone else's).
+  async exportTheme(id) {
+    let file;
+    try {
+      file = await neko.exportTheme(id);
+    } catch (e) {
+      if (e.code !== 'cancelled') toast('Could not export', { type: 'error', message: e.message });
+      return;
+    }
+    if (!file) return;
+    const theme = Theme.packs.find((p) => p.id === id);
+    toast('Theme exported', {
+      type: 'ok',
+      message: `${theme?.name || id} was saved as ${file.split(/[\\/]/).pop()}. Share it, and import it with Import theme.`,
+      actions: [{ label: 'Show in folder', onClick: () => neko.showInFolder(file) }],
+    });
   },
 
   async openFolder() {

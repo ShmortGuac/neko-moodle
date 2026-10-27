@@ -253,8 +253,9 @@ function textToHtml(text) {
 }
 
 // Shows Moodle-authored HTML (pages, book chapters) in a locked-down frame: no scripts can run, links open
-// through NEKO, and it's styled with the current theme. It grows to fit its content.
-function mountHtml(container, html) {
+// through NEKO, and it's styled with the current theme. It grows to fit its content. `css` adds styles
+// (a string, or a function given the theme-variable reader). Returns the frame.
+function mountHtml(container, html, { css: extraCss = '' } = {}) {
   const cs = getComputedStyle(document.documentElement);
   const v = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
   const css = `
@@ -269,7 +270,8 @@ function mountHtml(container, html) {
     code { padding: 1px 5px; } pre { padding: 12px 14px; overflow: auto; }
     h1, h2, h3, h4 { line-height: 1.25; font-family: ${v('--font-heading', v('--font', 'inherit'))}; }
     blockquote { margin: 0; padding: 2px 0 2px 14px; border-left: 3px solid ${v('--accent', '#1f9e93')}; color: ${v('--text-muted', '#666')}; }
-    hr { border: 0; border-top: 1px solid ${v('--border', '#ddd')}; }`;
+    hr { border: 0; border-top: 1px solid ${v('--border', '#ddd')}; }
+    ${typeof extraCss === 'function' ? extraCss(v) : extraCss}`;
   const frame = document.createElement('iframe');
   frame.className = 'html-frame';
   // allow-same-origin only lets NEKO measure the height; with scripts off, the content can't use it.
@@ -302,4 +304,5 @@ function mountHtml(container, html) {
   const onResize = () => (frame.isConnected ? fit() : window.removeEventListener('resize', onResize));
   window.addEventListener('resize', onResize);
   container.replaceChildren(frame);
+  return frame;
 }

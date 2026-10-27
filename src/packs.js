@@ -279,6 +279,32 @@ function copyThemeFiles(src, dest, manifest) {
   }
 }
 
+// Saves a theme as a .zip someone else can import: one <id>/ folder with theme.json, theme.css and its
+// pictures and fonts (nothing else from the folder). Returns the saved path, or null if cancelled.
+async function exportTheme(win, id) {
+  const dir = themeDir(id);
+  if (!dir) throw new Error(`Theme "${id}" not found.`);
+  const { canceled, filePath } = await dialog.showSaveDialog(win, {
+    title: 'Export theme',
+    defaultPath: path.join(app.getPath('downloads'), `${id}.zip`),
+    filters: [{ name: 'Theme (.zip)', extensions: ['zip'] }],
+  });
+  if (canceled || !filePath) return null;
+  const out = path.extname(filePath).toLowerCase() === '.zip' ? filePath : `${filePath}.zip`;
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'neko-export-'));
+  try {
+    copyThemeFiles(dir, path.join(tmp, id), null);
+    const zip = path.join(tmp, 'theme.zip');
+    // Windows' own tar writes a .zip when the name ends in .zip (-a). Built next to the theme, then moved into place.
+    const tar = process.platform === 'win32' ? path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe') : 'tar';
+    await new Promise((resolve, reject) => execFile(tar, ['-a', '-cf', zip, '-C', tmp, id], { windowsHide: true }, (err) => (err ? reject(new Error('Could not make the zip file.')) : resolve())));
+    fs.copyFileSync(zip, out);
+    return out;
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 // The folder holding the user's themes (created if missing).
 function userFolder() {
   fs.mkdirSync(userDir(), { recursive: true });
@@ -375,6 +401,6 @@ function handleProtocol() {
 }
 
 module.exports = {
-  listThemes, readTheme, saveTheme, createTheme, deleteTheme, importThemes, importFiles, userFolder, importAsset, themeDir, migrateUserThemes, splitVariants, formatJson,
+  listThemes, readTheme, saveTheme, createTheme, deleteTheme, importThemes, importFiles, exportTheme, userFolder, importAsset, themeDir, migrateUserThemes, splitVariants, formatJson,
   listSites, registerScheme, handleProtocol,
 };

@@ -18,6 +18,10 @@
   font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
 }
 
+/* Native parts of the editor's own controls (dropdown lists, scrollbars) are dark too; the preview keeps the app's. */
+.ed-panel, .ed-stagebar, .ed-cp { color-scheme: dark; }
+.ed-input option { background: var(--ed-panel); color: var(--ed-text); }
+
 .ed { display: grid; grid-template-columns: 420px minmax(0, 1fr); height: 100vh; }
 
 /* ---------- Panel ---------- */
@@ -48,10 +52,6 @@
 .ed-field__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .ed-field__head label { font-weight: 600; color: var(--ed-text); }
 .ed-hint { color: var(--ed-muted); font-size: 11.5px; line-height: 1.45; }
-
-  flex: none; border: 1px solid var(--ed-line); background: transparent; color: var(--ed-muted);
-  border-radius: 999px; padding: 1px 8px; font-size: 10.5px; cursor: pointer;
-}
 
 /* Inputs */
 .ed-input {
@@ -171,6 +171,10 @@ select.ed-input { padding-right: 4px; }
 .ed-tabs button { height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: var(--ed-muted); font: inherit; cursor: pointer; }
 .ed-tabs button:hover { color: var(--ed-text); }
 .ed-tabs button.is-on { background: var(--ed-raise); color: var(--ed-text); }
+/* Grid and guides toggles */
+.ed-toggle { height: 28px; padding: 0 10px; border: 1px solid var(--ed-line); border-radius: 7px; background: transparent; color: var(--ed-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.ed-toggle:hover { color: var(--ed-text); }
+.ed-toggle.is-on { background: rgba(124, 147, 255, 0.16); border-color: rgba(124, 147, 255, 0.5); color: var(--ed-text); }
 .ed-zoom { color: var(--ed-muted); font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; }
 .ed-canvas { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--ed-bg) radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 18px 18px; }
 
@@ -222,3 +226,23 @@ select.ed-input { padding-right: 4px; }
 .editing .ed-viewport .login__panel { cursor: grab; }
 .editing .ed-viewport .login__panel :is(input, button, select, textarea, summary, label, a, .chip) { cursor: auto; }
 .editing .ed-viewport .login__panel:hover { outline: 1px dashed rgba(124, 147, 255, 0.8); outline-offset: 4px; }
+
+/* Grid and smart guides, laid over the area being edited (the login page or the dashboard banner) */
+.ed-guides { position: absolute; z-index: 8999; pointer-events: none; }
+.ed-guides[hidden], .ed-guides__grid[hidden] { display: none; }
+.ed-guides__grid {
+  position: absolute; inset: 0;
+  --ed-grid-line: calc(1px * var(--inv, 1));
+  background:
+    linear-gradient(to right, rgba(124, 147, 255, 0.45) var(--ed-grid-line), transparent var(--ed-grid-line)) calc(50% - var(--ed-grid-line) / 2) 0 / 100% 100% no-repeat,
+    linear-gradient(to bottom, rgba(124, 147, 255, 0.45) var(--ed-grid-line), transparent var(--ed-grid-line)) 0 calc(50% - var(--ed-grid-line) / 2) / 100% 100% no-repeat,
+    linear-gradient(to right, rgba(124, 147, 255, 0.3) var(--ed-grid-line), transparent var(--ed-grid-line)) 0 0 / calc(var(--ed-grid) * 5) 100%,
+    linear-gradient(to bottom, rgba(124, 147, 255, 0.3) var(--ed-grid-line), transparent var(--ed-grid-line)) 0 0 / 100% calc(var(--ed-grid) * 5),
+    linear-gradient(to right, rgba(124, 147, 255, 0.14) var(--ed-grid-line), transparent var(--ed-grid-line)) 0 0 / var(--ed-grid) 100%,
+    linear-gradient(to bottom, rgba(124, 147, 255, 0.14) var(--ed-grid-line), transparent var(--ed-grid-line)) 0 0 / 100% var(--ed-grid);
+  outline: var(--ed-grid-line) solid rgba(124, 147, 255, 0.5);
+}
+.ed-guide { position: absolute; background: #ff4f8b; }
+.ed-guide--x { top: 0; bottom: 0; width: calc(1px * var(--inv, 1)); transform: translateX(-50%); }
+.ed-guide--y { left: 0; right: 0; height: calc(1px * var(--inv, 1)); transform: translateY(-50%); }
+.ed-guide--mid { background: #ff4f8b; box-shadow: 0 0 0 calc(0.5px * var(--inv, 1)) rgba(255, 79, 139, 0.4); }

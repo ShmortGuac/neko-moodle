@@ -69,6 +69,7 @@ const Editor = {
     App.downloadFile = async () => toast('Preview only', { message: 'Downloads are off in the theme editor.' });
     App.signOut = async () => toast('Preview only', { message: 'Signing out is off in the theme editor.' });
     neko.download = previewOnly('Downloading');
+    neko.previewFile = previewOnly('Viewing PDFs');
     neko.openWeb = async () => toast('Preview only', { message: 'Moodle pages open in an in-app window in the real app.' });
     neko.fetchHtml = async (url) => PreviewData.html(url);
     neko.rewriteHtml = async (html) => html;
@@ -83,6 +84,18 @@ const Editor = {
     neko.deleteTheme = previewOnly('Deleting themes');
     neko.importThemes = previewOnly('Importing themes');
     neko.openThemesFolder = async () => {};
+    neko.exportTheme = previewOnly('Exporting themes');
+    const updateState = { current: '0.1.1', kind: 'dev', auto: true, lastCheck: Date.now() - 3600e3, checked: true, latest: null, newer: [], canDownload: false, download: null, page: '' };
+    neko.updateStatus = async () => updateState;
+    neko.checkForUpdates = async () => updateState;
+    neko.justUpdated = async () => null;
+    neko.markUpdateSeen = async () => {};
+    neko.whatsNew = async () => ({ current: '0.1.1', releases: [{ version: '0.1.1', name: 'NEKO 0.1.1', date: '2026-10-01T00:00:00Z', url: '', notes: '- Choose the **download folder**\n- Import and export themes' }] });
+    neko.setAutoUpdateCheck = previewOnly('Changing update settings');
+    neko.downloadUpdate = previewOnly('Updating');
+    neko.installUpdate = previewOnly('Updating');
+    neko.onUpdateAvailable = () => {};
+    neko.onUpdateProgress = () => {};
     neko.downloadFolder = async () => ({ folder: 'C:\\Users\\you\\Downloads\\NEKO', custom: false, default: 'C:\\Users\\you\\Downloads\\NEKO' });
     neko.chooseDownloadFolder = previewOnly('Changing the download folder');
     neko.resetDownloadFolder = previewOnly('Changing the download folder');
@@ -270,6 +283,11 @@ const Editor = {
             <option value="due">Some due</option><option value="overdue">Only overdue</option><option value="clear">Nothing due</option>
           </select>
         </label>
+        <div class="ed-row" id="edLayout">
+          <button class="ed-toggle" data-layout="guides" title="Snap to the middle and edges of the area and of other elements. Hold Alt to move freely.">Guides</button>
+          <button class="ed-toggle" data-layout="grid" title="Show a grid and snap to it. Hold Alt to move freely.">Grid</button>
+          <select class="ed-input ed-input--sm" id="edGridSize" title="Grid size">${Guides.SIZES.map((n) => `<option value="${n}">${n} px</option>`).join('')}</select>
+        </div>
         <span class="ed-zoom" id="edZoom"></span>
       </div>`;
     Editor.updateStageBar();
@@ -279,6 +297,14 @@ const Editor = {
     $$('#edStageBar [data-page]').forEach((b) => b.classList.toggle('is-on', b.dataset.page === Editor.page));
     const kind = $('#edLoadingKind');
     if (kind) kind.hidden = Editor.page !== 'loading';
+    // Grid and guides are for the pages with things to move around.
+    const layout = $('#edLayout');
+    if (layout) {
+      layout.hidden = !['login', 'dashboard'].includes(Editor.page);
+      $$('[data-layout]', layout).forEach((b) => b.classList.toggle('is-on', !!Guides.prefs[b.dataset.layout]));
+      $('#edGridSize').value = String(Guides.prefs.size);
+      $('#edGridSize').hidden = !Guides.prefs.grid;
+    }
   },
 
   updateHead() {
@@ -354,9 +380,16 @@ const Editor = {
     $('#edStageBar').addEventListener('click', (e) => {
       const tab = e.target.closest('[data-page]');
       if (tab) Editor.showPage(tab.dataset.page);
+      const toggle = e.target.closest('[data-layout]');
+      if (toggle) {
+        Guides.set(toggle.dataset.layout, !Guides.prefs[toggle.dataset.layout]);
+        Editor.updateStageBar();
+      }
     });
     $('#edStageBar').addEventListener('change', (e) => {
-      if (e.target.id === 'edState') {
+      if (e.target.id === 'edGridSize') {
+        Guides.set('size', Number(e.target.value));
+      } else if (e.target.id === 'edState') {
         PreviewData.state = e.target.value;
         Editor.renderPreview();
       } else if (e.target.closest('#edLoadingKind')) {
@@ -367,6 +400,8 @@ const Editor = {
 
     $('#app').addEventListener('pointerdown', Transform.onAppPointerDown, true);
     $('#app').addEventListener('scroll', () => Transform.update(), true);
+    // Pages slide in and pictures load after a render; keep the selection box and grid on what they cover.
+    for (const type of ['animationend', 'transitionend', 'load']) $('#app').addEventListener(type, () => Transform.update(), true);
 
     window.addEventListener('keydown', (e) => {
       const typing = e.target.matches?.('input, textarea, select');

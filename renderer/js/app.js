@@ -176,6 +176,7 @@ const App = {
     $('#mascot').addEventListener('click', App.mascotSay);
     const view = $('#view');
     view.addEventListener('scroll', () => $('.topbar').classList.toggle('is-scrolled', view.scrollTop > 4));
+    Updates.init();
   },
 
   async navigate(name, params = {}, { push = true } = {}) {
@@ -324,6 +325,20 @@ const App = {
     const n = list.filter((d) => d.numunread > 0).length;
     badge.hidden = n === 0;
     badge.textContent = n;
+  },
+
+  // PDFs open in NEKO's viewer; every file can still be downloaded.
+  isPdf: (file) => /\.pdf$/i.test(file?.filename || '') || file?.mimetype === 'application/pdf',
+
+  viewFile(file, folder) {
+    return App.navigate('pdf', { file, folder });
+  },
+
+  // A file attached to a post or an assignment. PDFs open in the viewer and get a separate Download button.
+  attachmentHTML(file, i) {
+    const label = `<span>${esc(file.filename)}</span><small>${esc(fmtSize(file.filesize))}</small>`;
+    if (!App.isPdf(file)) return `<button class="attachment" data-file="${i}" title="Download">${Icons.clip}${label}</button>`;
+    return `<span class="attachment-pair"><button class="attachment" data-view-file="${i}" title="View in NEKO">${Icons.eye}${label}</button><button class="attachment attachment--icon" data-file="${i}" title="Download">${Icons.download}</button></span>`;
   },
 
   async downloadFile(file, folder) {

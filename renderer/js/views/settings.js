@@ -48,13 +48,14 @@ Views.settings = {
             <button class="btn btn--ghost btn--sm" id="allThemes">${Icons.grid} Show all (${Theme.packs.length})</button>
             <button class="btn btn--ghost btn--sm" id="newTheme">${Icons.star} New theme</button>
             <button class="btn btn--ghost btn--sm" id="editTheme">${Icons.settings} ${Theme.pack.locked ? 'Customize' : 'Edit theme'}</button>
+            <button class="btn btn--ghost btn--sm" id="exportTheme" title="Save this theme as a .zip to share">${Icons.download} Export</button>
             ${Theme.pack.source === 'user' ? `<button class="btn btn--ghost btn--sm" id="deleteTheme" title="Delete this theme">${Icons.trash} Delete</button>` : ''}
           </div>
         </div>
         <div class="card__body">
           <div class="theme-row" id="themeRow">${row.map((p) => Views.themes.card(p)).join('')}</div>
           <div class="settings-foot">
-            <p>Your themes are kept in the themes folder. Import a <b>theme.json</b> or <b>.zip</b> to add a theme someone shared.</p>
+            <p>Your themes are kept in the themes folder. Import a <b>theme.json</b> or <b>.zip</b> to add a theme someone shared, or Export one to share it.</p>
             <div class="toolbar">
               <button class="btn btn--ghost btn--sm" id="importTheme">${Icons.upload} Import theme</button>
               <button class="btn btn--ghost btn--sm" id="themesFolder">${Icons.folder} Open themes folder</button>
@@ -116,16 +117,18 @@ Views.settings = {
           <div class="card__head"><h3 class="card__title">${Icons.info} About the app</h3></div>
           <div class="card__body about">
             <div>
-              <b style="color:var(--text)">${esc(APP_NAME)}</b> v0.1.1<br>
+              <b style="color:var(--text)">${esc(APP_NAME)}</b> <span id="appVersion"></span><br>
               ${esc(APP_DESCRIPTION)}
               ${profile?.disclaimer ? esc(profile.disclaimer) : ''}
             </div>
             <img class="about__app-icon" src="neko.png" alt="NEKO">
           </div>
+          <div class="card__body card__body--split">${Updates.cardHTML()}</div>
         </div>
       </div>`;
 
     Views.themes.bind($('#themeRow', root));
+    Updates.bindCard(root);
     $$('[data-pref]', root).forEach((input) => input.addEventListener('change', () => {
       App.prefs[input.dataset.pref] = input.checked;
       App.savePrefs();
@@ -138,6 +141,7 @@ Views.settings = {
       App.reloadTheme();
     }));
     $('#allThemes', root).addEventListener('click', () => App.navigate('themes'));
+    $('#exportTheme', root).addEventListener('click', () => Views.themes.exportTheme(Theme.pack.id));
     $('#deleteTheme', root)?.addEventListener('click', () => Views.themes.remove(Theme.pack.id));
     $('#newTheme', root).addEventListener('click', () => Views.themes.create());
     $('#editTheme', root).addEventListener('click', async () => {

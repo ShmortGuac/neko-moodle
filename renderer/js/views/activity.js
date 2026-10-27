@@ -1,5 +1,5 @@
 // Activities shown inside NEKO instead of the browser. Everything else opens in the in-app window.
-const NATIVE_MODS = new Set(['page', 'book', 'forum', 'assign']);
+const NATIVE_MODS = new Set(['page', 'book', 'forum', 'assign', 'lesson']);
 
 Views.activity = {
   nav: 'courses',
@@ -34,6 +34,7 @@ Views.activity = {
       </div>`;
     if (mod.modname === 'assign') return Views.assign.render(root, mod, head, params, ctx);
     if (mod.modname === 'forum') return Views.forum.renderList(root, mod, head, params, ctx);
+    if (mod.modname === 'lesson') return Views.lesson.render(root, mod, head, params, ctx);
     if (mod.modname === 'book') return Views.activity.renderBook(root, mod, head, params, ctx);
     return Views.activity.renderPage(root, mod, head, ctx);
   },

@@ -7,6 +7,7 @@ const { ssoLogin } = require('./src/sso');
 const downloads = require('./src/downloads');
 const packs = require('./src/packs');
 const submissions = require('./src/submissions');
+const updates = require('./src/updates');
 
 packs.registerScheme();
 
@@ -19,6 +20,7 @@ let client = null;
 let lastAutologin = 0;
 
 const WEB_PARTITION = 'persist:moodle';
+const PDF_VIEWER_ID = 'mhjfbmdgcfjbbpaeojofohoefgiehjai'; // Chromium's built-in PDF viewer
 const AUTOLOGIN_GAP_MS = 6 * 60 * 1000; // Moodle's default minimum time between autologin keys
 
 const webPreferences = () => ({
@@ -40,6 +42,15 @@ function guardNavigation(w) {
       e.preventDefault();
       openExternal(url);
     }
+  });
+  // A link clicked inside a PDF would load the website in the viewer's frame; open it like any other link.
+  w.webContents.on('will-frame-navigate', (e) => {
+    const from = e.frame?.url || '';
+    const inPdf = /^file:.*\.pdf$/i.test(from) || from.startsWith(`chrome-extension://${PDF_VIEWER_ID}/`);
+    if (e.isMainFrame || !inPdf || e.url.startsWith('file:')) return;
+    e.preventDefault();
+    if (client?.isOwnUrl(e.url)) openWeb(e.url);
+    else openExternal(e.url);
   });
 }
 
@@ -249,6 +260,7 @@ handle('ws:tokenize', async (urls) => {
 });
 
 handle('file:download', async (opts) => downloads.downloadFile(requireClient(), opts));
+handle('file:preview', async (opts) => downloads.previewFile(requireClient(), opts));
 handle('file:open', async (p) => {
   const err = await shell.openPath(p);
   if (err) throw new Error(err);
@@ -290,6 +302,7 @@ handle('themes:import', async () => {
   if (res?.ids.length) broadcastThemesChanged();
   return res;
 });
+handle('theme:export', async (id) => packs.exportTheme(win, id));
 handle('themes:open-folder', async () => {
   const err = await shell.openPath(packs.userFolder());
   if (err) throw new Error(err);
@@ -308,18 +321,36 @@ ipcMain.handle('theme:asset', async (e, data) => {
 });
 handle('sites:list', async () => packs.listSites());
 
+const sendToMain = (channel, data) => {
+  if (win && !win.isDestroyed()) win.webContents.send(channel, data);
+};
+handle('updates:status', async () => updates.status());
+handle('updates:check', async () => updates.check({ force: true }));
+handle('updates:whats-new', async () => updates.whatsNew());
+handle('updates:just-updated', async () => updates.justUpdated());
+handle('updates:seen', async () => updates.markSeen());
+handle('updates:auto', async (on) => updates.setAuto(on));
+handle('updates:download', async () => updates.startDownload((s) => sendToMain('updates:progress', s)));
+handle('updates:install', async () => updates.install());
+handle('updates:show', async () => updates.showDownloaded());
+handle('updates:page', async () => openExternal(updates.status().page));
+
 handle('ui:titlebar', async ({ color, symbolColor }) => {
   if (win && !win.isDestroyed() && process.platform !== 'darwin') win.setTitleBarOverlay({ color, symbolColor, height: 44 });
 });
 
 app.whenReady().then(() => {
+  downloads.clearPreviews();
   packs.migrateUserThemes();
   packs.handleProtocol();
   createWindow();
+  updates.startAuto((s) => sendToMain('updates:available', s));
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
+
+app.on('will-quit', () => downloads.clearPreviews());
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

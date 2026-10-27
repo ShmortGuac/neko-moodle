@@ -34,8 +34,8 @@ Views.assign = {
     const folder = [stripHtml(course?.shortname) || `course-${params.courseId}`, stripHtml(assign.name)];
     const files = [];
     const fileButton = (f) => {
-      const i = files.push({ fileurl: f.fileurl, filename: f.filename, filesize: f.filesize }) - 1;
-      return `<button class="attachment" data-file="${i}" title="Download">${Icons.clip}<span>${esc(f.filename)}</span><small>${esc(fmtSize(f.filesize))}</small></button>`;
+      const i = files.push({ fileurl: f.fileurl, filename: f.filename, filesize: f.filesize, mimetype: f.mimetype }) - 1;
+      return App.attachmentHTML(files[i], i);
     };
 
     const now = Date.now() / 1000;
@@ -110,6 +110,8 @@ Views.assign = {
 
     const reload = () => App.navigate('activity', { courseId: params.courseId, cmid: params.cmid }, { push: false });
     root.addEventListener('click', (e) => {
+      const view = e.target.closest('[data-view-file]');
+      if (view) return App.viewFile(files[view.dataset.viewFile], folder);
       const file = e.target.closest('[data-file]');
       if (file) App.downloadFile(files[file.dataset.file], folder);
     });

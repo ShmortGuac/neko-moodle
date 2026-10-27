@@ -98,8 +98,8 @@ Views.discussion = {
       const title = stripHtml(p.subject);
       const showTitle = p !== first && title && title !== subject && title !== `Re: ${subject}`;
       const attachments = (p.attachments || []).map((a) => {
-        const i = files.push({ fileurl: a.url || a.fileurl, filename: a.filename, filesize: a.filesize }) - 1;
-        return `<button class="attachment" data-file="${i}" title="Download">${Icons.clip}<span>${esc(a.filename)}</span><small>${esc(fmtSize(a.filesize))}</small></button>`;
+        const i = files.push({ fileurl: a.url || a.fileurl, filename: a.filename, filesize: a.filesize, mimetype: a.mimetype }) - 1;
+        return App.attachmentHTML(files[i], i);
       }).join('');
       return `
         <article class="post card ${p.unread ? 'is-unread' : ''}" style="--depth:${Math.min(depth, 4)}" id="post-${p.id}">
@@ -134,6 +134,8 @@ Views.discussion = {
     });
 
     root.addEventListener('click', async (e) => {
+      const view = e.target.closest('[data-view-file]');
+      if (view) return App.viewFile(files[view.dataset.viewFile], folder);
       const file = e.target.closest('[data-file]');
       if (file) return App.downloadFile(files[file.dataset.file], folder);
       const reply = e.target.closest('[data-reply]');

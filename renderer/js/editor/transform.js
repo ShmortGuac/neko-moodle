@@ -2,6 +2,7 @@
 //   drag inside   move            corner handles   resize (keeps aspect; Shift = free for images)
 //   rotate knob   rotate (Shift snaps to 15°)       edge handles     stretch one side
 //   arrow keys    nudge (Shift = 5%)               Delete            remove the element
+// Moves snap to the grid and smart guides when they're switched on (guides.js); hold Alt to move freely.
 // Geometry is worked out in the container's own pixels (unscaled), then written back as % values.
 
 const HANDLES = [['nw', -1, -1], ['n', 0, -1], ['ne', 1, -1], ['e', 1, 0], ['se', 1, 1], ['s', 0, 1], ['sw', -1, 1], ['w', -1, 0]];
@@ -10,6 +11,7 @@ const rotate2d = ({ x, y }, deg) => {
   return { x: x * Math.cos(a) - y * Math.sin(a), y: x * Math.sin(a) + y * Math.cos(a) };
 };
 const round1 = (v) => Math.round(v * 10) / 10;
+const round2 = (v) => Math.round(v * 100) / 100; // positions: fine enough to stay on a snapped grid line
 
 const Transform = {
   overlay() {
@@ -46,11 +48,13 @@ const Transform = {
   measure(t) {
     const [ax, ay] = t.kind === 'card' ? [-50, -50] : ALIGN[t.item.align] || ALIGN.center;
     const isText = t.kind === 'el' && t.item.type === 'text';
+    const cs = getComputedStyle(t.node);
     return {
       W: t.node.offsetWidth,
       H: t.node.offsetHeight,
-      L: t.node.offsetLeft, // the anchor point (style left/top) in container px
-      T: t.node.offsetTop,
+      // The anchor point (style left/top) in container px. offsetLeft/Top round to whole px, which throws snapping off.
+      L: parseFloat(cs.left) || t.node.offsetLeft,
+      T: parseFloat(cs.top) || t.node.offsetTop,
       fx: -ax / 100,
       fy: -ay / 100,
       r: t.kind === 'card' ? 0 : Number(t.item.rotate) || 0,
@@ -65,6 +69,7 @@ const Transform = {
   update() {
     const t = Transform.target();
     const el = Transform.overlay();
+    Guides.refresh();
     if (!t) {
       el.hidden = true;
       return;
@@ -152,13 +157,15 @@ const Transform = {
     const C = Transform.center(g);
     const bothSizes = t.item.width !== undefined && t.item.height !== undefined;
     let next = null;
+    if (mode === 'move') Guides.start(t);
 
     const move = (ev) => {
       const p = toC(ev);
       next = { ...g };
       if (mode === 'move') {
-        next.L = g.L + p.x - p0.x;
-        next.T = g.T + p.y - p0.y;
+        const d = Guides.snapMove(p.x - p0.x, p.y - p0.y, ev);
+        next.L = g.L + d.x;
+        next.T = g.T + d.y;
       } else if (mode === 'rotate') {
         const a0 = Math.atan2(p0.y - C.y, p0.x - C.x);
         const a = Math.atan2(p.y - C.y, p.x - C.x);
@@ -188,6 +195,7 @@ const Transform = {
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      Guides.stop();
       if (next) Transform.commit(t, g, next, mode);
       else if (t.kind === 'el') Editor.revealItem(t.path, t.index);
     };
@@ -200,8 +208,8 @@ const Transform = {
     const base = t.kind === 'card' ? 'login.card' : `${t.path}.${t.index}`;
     Editor.snapshot(true);
     if (mode !== 'rotate') {
-      Editor.write(`${base}.x`, round1((n.L / g.cW) * 100));
-      Editor.write(`${base}.y`, round1((n.T / g.cH) * 100));
+      Editor.write(`${base}.x`, round2((n.L / g.cW) * 100));
+      Editor.write(`${base}.y`, round2((n.T / g.cH) * 100));
     }
     if (mode === 'rotate') Editor.write(`${base}.rotate`, round1(n.r) || undefined);
     if (mode === 'scale') {

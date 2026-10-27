@@ -20,13 +20,17 @@ The app gets a Moodle app token the same way the official app does, and stores i
 
 - **Dashboard**: greeting, due-soon list, stats, latest announcements, recently visited courses
 - **Courses**: search and current/past filter
-- **Course page**: sections and activities, clickable links, per-file download, **Download all files** (skips files you already have)
+- **Course page**: sections and activities, clickable links, per-file download, **PDFs open inside NEKO** (zoom, search, print; Download still there), **Download all files** (skips files you already have)
 - **Reading in the app**: pages and books open inside NEKO; other activities open in a signed-in in-app window
 - **Forums**: discussions with threaded replies and attachments; reply or start a discussion from NEKO
 - **Announcements**: the latest news from every course in one feed, with an unread badge
 - **Assignments**: instructions, due dates, status, grades and feedback; add files (pick or drag in) or online text, save drafts and submit for grading
+- **Lessons**: content pages and questions one page at a time, with feedback, time limits and the end-of-lesson summary; Moodle keeps your progress, so a lesson can be finished on the website too
 - **Deadlines**: grouped into Overdue / Today / Tomorrow / This week / Later; assignments open in NEKO
-- **Settings**: theme picker (one row, plus a Themes page with search), theme options, theme editor, import themes, sign out
+- **Settings**: theme picker (one row, plus a Themes page with search), theme options, theme editor, import and export themes, sign out
+- **Updates**: checks GitHub Releases when NEKO starts and every few hours (can be turned off), shows **What's new**
+  from the release notes, and downloads the update when you choose (the installer runs only when you press Install;
+  the portable build is saved next to your downloads)
 - Files are saved to `Downloads\NEKO\<course>\<section>\`; pick another folder in Settings → Downloads
 
 ## The three layers
@@ -65,7 +69,8 @@ main.js            Electron main process: window, IPC handlers
 src/moodle.js      Moodle REST client (login/token.php, webservice/rest/server.php)
 src/sso.js         SSO login via admin/tool/mobile/launch.php → moodlemobile://token=...
 src/session.js     Encrypted token storage
-src/downloads.js   File downloads
+src/downloads.js   File downloads and the PDF viewer's temporary copies
+src/updates.js     Update checks and downloads from GitHub Releases
 src/packs.js       Loads theme packs and site profiles, serves theme:// files
 preload.js         Safe bridge exposed to the UI
 renderer/js/       theme.js (theme engine), site.js (profiles), app.js (core), views/ (pages)
@@ -82,6 +87,13 @@ const grades = await App.call('gradereport_overview_get_course_grades', {});
 
 - NEKO is unofficial and not affiliated with Moodle HQ or any institution.
 - Be gentle with the server: the app only fetches when you open a page or press refresh.
+
+## Releasing
+
+Update checks read the GitHub releases of this repo. Tag releases `vX.Y.Z` (matching `version` in `package.json`)
+and attach the files electron-builder makes, with their names unchanged: `NEKO-Setup-X.Y.Z.exe` and
+`NEKO-X.Y.Z-portable.exe`. The release text is what **What's new** shows (Markdown). Drafts and pre-releases are
+skipped.
 
 ## License
 

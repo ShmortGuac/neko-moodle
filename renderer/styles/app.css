@@ -411,6 +411,29 @@ body:not(.has-stripes) .stripes, body:not(.has-stars) .stars { display: none; }
 .attachment svg { width: 15px; height: 15px; flex: none; }
 .attachment span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .attachment small { color: var(--text-muted); font-weight: 600; }
+.attachment-pair { display: inline-flex; gap: 4px; max-width: 100%; min-width: 0; }
+.attachment-pair .attachment:first-child { min-width: 0; }
+.attachment--icon { padding: 7px 9px; color: var(--text-muted); }
+
+/* ---------- Lessons ---------- */
+.lesson-start__text { margin: 0 0 14px; line-height: 1.6; }
+.lesson-notes { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+.lesson-notes li { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--radius-button); background: color-mix(in srgb, var(--primary) 9%, var(--surface)); border: 1px solid var(--border); font-size: 13px; font-weight: 700; }
+.lesson-notes svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--primary); }
+.lesson-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-size: 12px; font-weight: 800; color: var(--text-muted); }
+.lesson-bar .progress { flex: 1; }
+.lesson-bar .chip svg { width: 13px; height: 13px; }
+.lesson-page { margin-bottom: 20px; }
+.lesson-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.lesson-actions:empty { display: none; }
+.lesson-actions__busy { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+.lesson-verdict { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 15px; }
+.lesson-verdict svg { width: 20px; height: 20px; flex: none; }
+.lesson-verdict.is-ok { color: var(--ok); } .lesson-verdict.is-danger { color: var(--danger); } .lesson-verdict.is-warn { color: var(--warn); }
+.lesson-summary { margin: 0; padding-left: 20px; display: grid; gap: 6px; line-height: 1.55; }
+
+/* ---------- PDF viewer ---------- */
+.pdf-frame { display: block; width: 100%; height: calc(100vh - 200px); min-height: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); box-shadow: var(--shadow-sm); }
 
 /* ---------- Assignments ---------- */
 .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; padding: 0; overflow: hidden; background: var(--border); margin-bottom: 20px; }
@@ -457,10 +480,12 @@ body:not(.has-stripes) .stripes, body:not(.has-stars) .stars { display: none; }
 .dl-path { word-break: break-all; }
 .theme-tile { position: relative; display: flex; min-width: 0; }
 .theme-tile .theme-card { flex: 1; }
-.theme-card__delete { position: absolute; right: 10px; bottom: 10px; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--surface); color: var(--text-muted); box-shadow: var(--shadow-sm); opacity: 0; transition: opacity 0.15s, color 0.15s; }
-.theme-card__delete svg { width: 16px; height: 16px; }
-.theme-tile:hover .theme-card__delete, .theme-card__delete:focus-visible { opacity: 1; }
-.theme-card__delete:hover { color: var(--danger); }
+.theme-card__actions { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+.theme-tile:hover .theme-card__actions, .theme-card__actions:focus-within { opacity: 1; }
+.theme-card__action { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--surface); color: var(--text-muted); box-shadow: var(--shadow-sm); transition: color 0.15s; }
+.theme-card__action svg { width: 16px; height: 16px; }
+.theme-card__action:hover { color: var(--primary); }
+.theme-card__action--danger:hover { color: var(--danger); }
 .theme-card { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 0; border-radius: var(--radius-sm); overflow: hidden; border: 3px solid transparent; background: var(--surface-2); text-align: left; transition: transform 0.15s, border-color 0.15s; }
 .theme-card:hover { transform: translateY(-3px); }
 .theme-card.is-active { border-color: var(--primary); }
@@ -586,3 +611,35 @@ body:not(.has-stripes) .stripes, body:not(.has-stars) .stars { display: none; }
 
 /* Headings can use their own font */
 h1, h2, h3, .brand__name { font-family: var(--font-heading, var(--font)); }
+
+/* Updates (Settings → About the app) and the What's new window */
+.card__body--split { border-top: 1px solid var(--border); }
+.update-box { display: grid; gap: 12px; }
+.update-status { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.update-status.is-new { color: var(--text); font-weight: 700; }
+.update-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.update-actions[hidden] { display: none; }
+.update-progress { position: relative; width: 140px; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.update-progress i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--primary); transition: width 0.2s; }
+.update-pct, .update-note { font-size: 12px; color: var(--text-muted); }
+.update-error { font-size: 12px; color: var(--danger); }
+.update-box .toggle-row { padding-bottom: 0; }
+.modal--updates .modal__actions { justify-content: space-between; }
+.release-notes { max-height: min(56vh, 520px); overflow-y: auto; display: grid; gap: 14px; padding-right: 4px; }
+.release { padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface-2); }
+.release__head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.release__head b { font-size: 15px; color: var(--text); }
+.release__head span { font-size: 12px; color: var(--text-muted); }
+.release__head .btn { margin-left: auto; }
+.release__body { font-size: 13px; line-height: 1.6; color: var(--text); }
+.release__body > :first-child { margin-top: 8px; }
+.release__body > :last-child { margin-bottom: 0; }
+.release__body p { margin: 8px 0; }
+.release__body ul, .release__body ol { margin: 8px 0; padding-left: 20px; }
+.release__body li { margin: 3px 0; }
+.release__body h4 { margin: 12px 0 4px; font-size: 13.5px; }
+.release__body h4.md-h1, .release__body h4.md-h2 { font-size: 14.5px; }
+.release__body code { padding: 1px 5px; border-radius: 4px; background: var(--surface); font-family: Consolas, "Cascadia Code", monospace; font-size: 12px; }
+.release__body a { color: var(--primary); font-weight: 600; }
+.release__body hr { border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
+.release__none { margin: 0; color: var(--text-muted); font-size: 13px; }
