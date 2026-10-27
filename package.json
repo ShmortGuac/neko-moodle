@@ -25,6 +25,11 @@
       "output": "dist"
     },
     "asar": false,
+    "electronLanguages": [
+      "en-US"
+    ],
+    "compression": "maximum",
+    "afterPack": "build/after-pack.js",
     "files": [
       "main.js",
       "preload.js",
