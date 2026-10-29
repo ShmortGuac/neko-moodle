@@ -44,7 +44,7 @@ The app gets a Moodle app token the same way the official app does, and stores i
 | **Site profiles** | `sites/<id>.json` | One institution's quirks: quick-pick URLs, SSO button label, course-name and person-name parsing |
 | **Core app** | `main.js`, `src/`, `renderer/` | Talking to Moodle, pages, downloads |
 
-Built in: the neutral **Default Light** and **Default Dark** themes. Make your own themes in the theme editor, or drop a
+Built in: **Light**, **Dark**, **Sakura** and **Forest**. Make your own themes in the theme editor, or drop a
 theme folder into `themes/`.
 
 ### Theme packs

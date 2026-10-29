@@ -10,11 +10,11 @@ import forum from '../assets/shots/forum.png';
 import courses from '../assets/shots/courses.png';
 
 const shots = [
-  { img: editor, title: 'Theme editor', text: 'Change colours, fonts and pictures and watch the real pages update.', theme: 'Sakura (made in the editor)' },
-  { img: dashboard, title: 'Dashboard', text: 'What’s due, the latest news and your progress at a glance.', theme: 'Default Light' },
-  { img: course, title: 'Course page', text: 'Sections, files and activities. View PDFs or download everything at once.', theme: 'Default Dark' },
-  { img: assignment, title: 'Assignments', text: 'Due dates, status, grade and feedback, and your submission.', theme: 'Default Light' },
-  { img: forum, title: 'Forums', text: 'Threaded discussions with attachments and replies.', theme: 'Default Dark' },
+  { img: editor, title: 'Theme editor', text: 'Change colours, fonts and pictures and watch the real pages update.', theme: 'Sakura' },
+  { img: dashboard, title: 'Dashboard', text: 'What’s due, the latest news and your progress at a glance.', theme: 'Light' },
+  { img: course, title: 'Course page', text: 'Sections, files and activities. View PDFs or download everything at once.', theme: 'Dark' },
+  { img: assignment, title: 'Assignments', text: 'Due dates, status, grade and feedback, and your submission.', theme: 'Light' },
+  { img: forum, title: 'Forums', text: 'Threaded discussions with attachments and replies.', theme: 'Dark' },
   { img: courses, title: 'Courses', text: 'Every course with progress, search and current/past filters.', theme: 'Sakura' },
 ];
 const full = await Promise.all(shots.map((s) => getImage({ src: s.img, width: 2000, format: 'webp' })));

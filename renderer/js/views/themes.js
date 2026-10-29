@@ -28,7 +28,7 @@ Views.themes = {
     return `<div class="theme-tile">${card}<div class="theme-card__actions"><button class="theme-card__action" data-export-theme="${esc(theme.id)}" title="Export as .zip">${Icons.download}</button>${del}</div></div>`;
   },
 
-  // Asks first; the theme's folder goes to the Recycle Bin. Using it? Switch to Default Light.
+  // Asks first; the theme's folder goes to the Recycle Bin. Using it? Switch to Light.
   async remove(id) {
     const theme = Theme.packs.find((p) => p.id === id);
     if (!theme || theme.source !== 'user') return;
@@ -121,7 +121,7 @@ Views.themes = {
   },
 
   async create() {
-    const name = await promptModal({ title: 'New theme', label: 'Name', value: 'My theme', okLabel: 'Create', hint: 'Starts from Default Light. You can change everything in the editor.' });
+    const name = await promptModal({ title: 'New theme', label: 'Name', value: 'My theme', okLabel: 'Create', hint: 'Starts from Light. You can change everything in the editor.' });
     if (name) Views.settings.openEditorFor(await neko.createTheme({ name }));
   },
 

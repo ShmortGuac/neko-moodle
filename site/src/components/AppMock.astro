@@ -1,15 +1,14 @@
 ---
 // A small live mock of NEKO's dashboard (HTML and CSS, sample data). The buttons under it swap its theme,
-// the same way themes restyle the real app. Default Light and Dark use the app's own colours; the others
-// are examples of themes people can make.
+// the same way themes restyle the real app. The four are NEKO's built-in themes.
 import Icon from './Icon.astro';
 import { Image } from 'astro:assets';
 import icon from '../assets/icon.png';
 
 const themes = [
-  { id: 'light', name: 'Default Light', swatch: ['#f3f4f9', '#4f5fe8', '#1f9e93'] },
-  { id: 'dark', name: 'Default Dark', swatch: ['#15171f', '#8a96ff', '#4fd1c5'] },
-  { id: 'sakura', name: 'Sakura', swatch: ['#fff4f7', '#e2557f', '#f2a541'] },
+  { id: 'light', name: 'Light', swatch: ['#f3f4f9', '#4f5fe8', '#1f9e93'] },
+  { id: 'dark', name: 'Dark', swatch: ['#15171f', '#8a96ff', '#4fd1c5'] },
+  { id: 'sakura', name: 'Sakura', swatch: ['#fff6f9', '#d94a78', '#2a9fb0'] },
   { id: 'forest', name: 'Forest', swatch: ['#10201a', '#5fcf8f', '#e0c35a'] },
 ];
 const due = [
@@ -93,9 +92,9 @@ const due = [
     --m-hero: #3c3f9e;
   }
   .mock[data-theme="sakura"] {
-    --m-bg: #fff4f7; --m-surface: #fff; --m-surface-2: #fff0f4; --m-side: #ffe6ee; --m-text: #3a1f2b; --m-muted: #8c6474;
-    --m-primary: #e2557f; --m-primary-ink: #fff; --m-accent: #f2a541; --m-bad: #d6334f; --m-warn: #e08a1e; --m-border: rgba(226, 85, 127, 0.16);
-    --m-hero: #d94a78; --m-radius: 22px;
+    --m-bg: #fff6f9; --m-surface: #fff; --m-surface-2: #fff0f5; --m-side: #ffeaf2; --m-text: #3a1f2b; --m-muted: #8c6474;
+    --m-primary: #d94a78; --m-primary-ink: #fff; --m-accent: #2a9fb0; --m-bad: #d6334f; --m-warn: #d9861f; --m-border: rgba(120, 40, 70, 0.1);
+    --m-hero: #e2557f; --m-radius: 22px;
   }
   .mock[data-theme="forest"] {
     --m-bg: #10201a; --m-surface: #172c24; --m-surface-2: #1d362c; --m-side: #0c1914; --m-text: #e6f2ea; --m-muted: #93b3a1;

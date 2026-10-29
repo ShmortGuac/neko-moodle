@@ -1,0 +1,47 @@
+{
+  "name": "Forest",
+  "author": "Built in",
+  "version": "1.0.0",
+  "description": "Deep greens with a warm gold accent, for the night.",
+  "swatches": ["#10201a","#5fcf8f","#e0c35a"],
+  "about": "Deep forest greens with a warm gold accent.\nUse it as a starting point for your own theme.",
+  "tokens": {
+    "font": "\"Segoe UI Variable Text\", \"Segoe UI\", system-ui, sans-serif",
+    "radius": "14px",
+    "radius-sm": "10px",
+    "bg": "#10201a",
+    "surface": "#172c24",
+    "surface-2": "#1d362c",
+    "sidebar": "rgba(12, 25, 20, 0.92)",
+    "text": "#e6f2ea",
+    "text-muted": "#93b3a1",
+    "primary": "#5fcf8f",
+    "primary-2": "#86dca9",
+    "primary-ink": "#0c1914",
+    "accent": "#e0c35a",
+    "accent-soft": "rgba(224, 195, 90, 0.14)",
+    "purple": "#b5a3f0",
+    "danger": "#ff7a6b",
+    "warn": "#e0c35a",
+    "ok": "#5fcf8f",
+    "border": "rgba(255, 255, 255, 0.07)",
+    "watermark": "transparent",
+    "stripe": "transparent",
+    "star": "transparent",
+    "hero-from": "#1f6b4a",
+    "hero-to": "#2f5a3c",
+    "hero-ink": "#ffffff",
+    "shadow": "0 16px 36px -18px rgba(0, 0, 0, 0.7)",
+    "shadow-sm": "0 6px 16px -8px rgba(0, 0, 0, 0.55)"
+  },
+  "decorations": {"watermark":"","stripes":false,"stars":false},
+  "courseCard": {
+    "palette": [
+      ["#4fae78","#2f7d55"],
+      ["#d8b44a","#a8862c"],
+      ["#5fa8b0","#3a7f87"],
+      ["#9a8ad8","#6c5bb0"],
+      ["#d98a5c","#a85f36"]
+    ]
+  }
+}

@@ -40,7 +40,9 @@
       "build/icon.*",
       "themes/README.md",
       "themes/default-light/**",
-      "themes/default-dark/**"
+      "themes/default-dark/**",
+      "themes/sakura/**",
+      "themes/forest/**"
     ],
     "win": {
       "icon": "build/icon.ico",

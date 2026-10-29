@@ -3,7 +3,7 @@
 // the theme:// protocol, which can only read inside a theme's folder.
 //
 // Themes live in two places:
-//   <app>/themes        built in (Default Light / Dark are read-only)
+//   <app>/themes        built in (Light, Dark, Sakura and Forest are read-only)
 //   <userData>/themes   made in the theme editor; wins over a built-in theme with the same id
 
 const { app, dialog, protocol, net, shell } = require('electron');
@@ -15,7 +15,7 @@ const { pathToFileURL } = require('node:url');
 
 const BUILTIN_DIR = path.join(__dirname, '..', 'themes');
 const SITES_DIR = path.join(__dirname, '..', 'sites');
-const LOCKED = new Set(['default-light', 'default-dark']);
+const LOCKED = new Set(['default-light', 'default-dark', 'sakura', 'forest']);
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 const IMAGE_TYPES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const ASSET_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'apng', 'woff', 'woff2', 'ttf', 'otf'];
@@ -80,7 +80,7 @@ function readTheme(id) {
 function writableDir(id) {
   const dir = themeDir(id);
   if (!dir) throw new Error(`Theme "${id}" not found.`);
-  if (dir.startsWith(BUILTIN_DIR) && LOCKED.has(id)) throw new Error('Built-in Default themes can\'t be changed. Make a copy instead.');
+  if (dir.startsWith(BUILTIN_DIR) && LOCKED.has(id)) throw new Error('Built-in themes can\'t be changed. Make a copy instead.');
   return dir;
 }
 
@@ -163,7 +163,7 @@ function slugify(name) {
   return String(name || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'theme';
 }
 
-// Copies an existing theme (default: the built-in Default Light) into the user folder under a new name.
+// Copies an existing theme (default: the built-in Light) into the user folder under a new name.
 function createTheme({ name, from = 'default-light' }) {
   const source = themeDir(from);
   if (!source) throw new Error(`Theme "${from}" not found.`);

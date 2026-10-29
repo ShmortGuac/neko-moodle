@@ -15,8 +15,8 @@ Themes made in the editor are saved in your user folder (`%APPDATA%\NEKO\themes\
 Themes page) saves it as a `.zip` to send. **Import theme** (in Settings, or on the Themes page) takes a
 `.zip` (one or more theme folders, or a `theme.json` at the top) or a `theme.json` (its whole folder comes along).
 Each import becomes a new theme, so nothing is overwritten. Only JSON, CSS, images and fonts are copied.
-Built-in themes live in the app's `themes/` folder; the built-in Default Light and Default Dark are
-read-only, so "Customize" makes a copy.
+Built-in themes live in the app's `themes/` folder; the built-in Light, Dark, Sakura and Forest
+are read-only, so "Customize" makes a copy.
 
 A theme is a folder in `themes/` with a `theme.json`, an optional `theme.css`, and any images or fonts
 it uses (usually in `assets/`). There's no code: themes are JSON, CSS and images only.
@@ -32,7 +32,7 @@ The folder name is the theme's id (lowercase letters, numbers, dashes). Paths li
 relative to the theme folder. Press `Ctrl+R` in the app to reload after editing.
 
 **Everything is optional.** Leave a setting out and the built-in default is used. One theme is one look:
-a light and a dark version are two separate themes (like Default Light and Default Dark).
+a light and a dark version are two separate themes (like Light and Dark).
 
 See `themes/default-light/theme.json` for a minimal theme, and the sections below for everything else.
 

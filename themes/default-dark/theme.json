@@ -1,8 +1,8 @@
 {
-  "name": "Default Dark",
+  "name": "Dark",
   "author": "Built in",
   "version": "1.0.0",
-  "description": "Clean, neutral look with no artwork.",
+  "description": "Clean, neutral dark look with no artwork.",
   "swatches": ["#15171f","#8a96ff","#4fd1c5"],
   "about": "The built-in look: clean, neutral, and easy on the eyes.\nUse it as a starting point for your own theme.",
   "tokens": {

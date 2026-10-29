@@ -1,0 +1,47 @@
+{
+  "name": "Sakura",
+  "author": "Built in",
+  "version": "1.0.0",
+  "description": "Soft cherry-blossom pink on a light background.",
+  "swatches": ["#fff6f9","#d94a78","#2a9fb0"],
+  "about": "Cherry-blossom pinks with a cool teal accent.\nUse it as a starting point for your own theme.",
+  "tokens": {
+    "font": "\"Segoe UI Variable Text\", \"Segoe UI\", system-ui, sans-serif",
+    "radius": "24px",
+    "radius-sm": "16px",
+    "bg": "#fff6f9",
+    "surface": "#ffffff",
+    "surface-2": "#fff0f5",
+    "sidebar": "#ffeaf2",
+    "text": "#3a1f2b",
+    "text-muted": "#8c6474",
+    "primary": "#d94a78",
+    "primary-2": "#f27a9b",
+    "primary-ink": "#ffffff",
+    "accent": "#2a9fb0",
+    "accent-soft": "#dff4f6",
+    "purple": "#9b59c4",
+    "danger": "#d6334f",
+    "warn": "#d9861f",
+    "ok": "#2f9e6a",
+    "border": "rgba(120, 40, 70, 0.1)",
+    "watermark": "transparent",
+    "stripe": "transparent",
+    "star": "transparent",
+    "hero-from": "#e2557f",
+    "hero-to": "#f08aa8",
+    "hero-ink": "#ffffff",
+    "shadow": "0 12px 30px -18px rgba(150, 50, 90, 0.35)",
+    "shadow-sm": "0 4px 14px -8px rgba(150, 50, 90, 0.3)"
+  },
+  "decorations": {"watermark":"","stripes":false,"stars":false},
+  "courseCard": {
+    "palette": [
+      ["#f27a9b","#d94a78"],
+      ["#5cc4d1","#2a9fb0"],
+      ["#c58ae0","#9b59c4"],
+      ["#f6b07a","#e0844a"],
+      ["#f59ab8","#e2557f"]
+    ]
+  }
+}
