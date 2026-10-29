@@ -96,6 +96,8 @@ const Editor = {
     neko.installUpdate = previewOnly('Updating');
     neko.onUpdateAvailable = () => {};
     neko.onUpdateProgress = () => {};
+    neko.desktopSettings = async () => ({ tray: false, startup: false, startupAvailable: true });
+    neko.setDesktopSetting = previewOnly('Changing desktop settings');
     neko.downloadFolder = async () => ({ folder: 'C:\\Users\\you\\Downloads\\NEKO', custom: false, default: 'C:\\Users\\you\\Downloads\\NEKO' });
     neko.chooseDownloadFolder = previewOnly('Changing the download folder');
     neko.resetDownloadFolder = previewOnly('Changing the download folder');

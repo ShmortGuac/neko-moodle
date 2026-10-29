@@ -30,6 +30,7 @@ The app gets a Moodle app token the same way the official app does, and stores i
 - **Lessons**: content pages and questions one page at a time, with feedback, time limits and the end-of-lesson summary; Moodle keeps your progress, so a lesson can be finished on the website too
 - **Deadlines**: grouped into Overdue / Today / Tomorrow / This week / Later; assignments open in NEKO
 - **Settings**: theme picker (one row, plus a Themes page with search), theme options, theme editor, import and export themes, sign out
+- **Desktop**: keep running in the tray when the window is closed, and open on startup (both in Settings, off until switched on)
 - **Updates**: checks GitHub Releases when NEKO starts and every few hours (can be turned off), shows **What's new**
   from the release notes, and downloads the update when you choose (the installer runs only when you press Install;
   the portable build is saved next to your downloads)

@@ -8,10 +8,16 @@ const downloads = require('./src/downloads');
 const packs = require('./src/packs');
 const submissions = require('./src/submissions');
 const updates = require('./src/updates');
+const desktop = require('./src/desktop');
 
 packs.registerScheme();
 
 const ICON = path.join(__dirname, process.platform === 'win32' ? 'build/icon.ico' : 'build/icon.png');
+
+// One NEKO at a time: starting it again (e.g. while it's in the tray) brings back the open window.
+const firstInstance = app.requestSingleInstanceLock();
+if (!firstInstance) app.quit();
+app.on('second-instance', () => desktop.show());
 
 let win = null;
 let editorWin = null;
@@ -78,9 +84,10 @@ function createWindow() {
     webPreferences: webPreferences(),
   });
 
-  win.once('ready-to-show', () => win.show());
+  win.once('ready-to-show', () => { if (!desktop.startHidden()) win.show(); });
   win.loadFile(path.join(__dirname, 'renderer/index.html'));
   guardNavigation(win);
+  desktop.guardClose(win);
 }
 
 function openEditor(themeId) {
@@ -335,11 +342,16 @@ handle('updates:install', async () => updates.install());
 handle('updates:show', async () => updates.showDownloaded());
 handle('updates:page', async () => openExternal(updates.status().page));
 
+handle('desktop:settings', async () => desktop.settings());
+handle('desktop:set', async (key, on) => desktop.set(key, on));
+
 handle('ui:titlebar', async ({ color, symbolColor }) => {
   if (win && !win.isDestroyed() && process.platform !== 'darwin') win.setTitleBarOverlay({ color, symbolColor, height: 44 });
 });
 
 app.whenReady().then(() => {
+  if (!firstInstance) return;
+  desktop.init({ window: () => win, iconPath: ICON });
   downloads.clearPreviews();
   packs.migrateUserThemes();
   packs.handleProtocol();

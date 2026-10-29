@@ -62,5 +62,8 @@ contextBridge.exposeInMainWorld('nekoBridge', {
   onUpdateAvailable: (cb) => { ipcRenderer.on('updates:available', (_e, s) => cb(s)); },
   onUpdateProgress: (cb) => { ipcRenderer.on('updates:progress', (_e, s) => cb(s)); },
 
+  desktopSettings: call('desktop:settings'),
+  setDesktopSetting: call('desktop:set'),
+
   setTitlebar: (color, symbolColor) => ipcRenderer.invoke('ui:titlebar', { color, symbolColor }),
 });

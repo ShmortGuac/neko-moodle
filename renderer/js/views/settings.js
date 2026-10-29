@@ -86,6 +86,20 @@ Views.settings = {
         </div>
 
         <div class="card">
+          <div class="card__head"><h3 class="card__title">${Icons.grid} Desktop</h3></div>
+          <div class="card__body">
+            <div class="toggle-row">
+              <div><b>Keep running in the tray</b><span>Closing the window hides NEKO to the system tray. Right-click the tray icon to quit.</span></div>
+              <label class="switch"><input type="checkbox" data-desktop="tray" disabled><i></i></label>
+            </div>
+            <div class="toggle-row">
+              <div><b>Open on startup</b><span id="startupDesc">Start NEKO when you sign in to Windows. With the tray on, it starts in the tray.</span></div>
+              <label class="switch"><input type="checkbox" data-desktop="startup" disabled><i></i></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
           <div class="card__head"><h3 class="card__title">${Icons.user} Account</h3></div>
           <div class="card__body">
             <div class="account">
@@ -177,6 +191,24 @@ Views.settings = {
       showDl(info);
       toast('Download folder reset', { type: 'ok', message: `New files are saved to ${info.folder}` });
     });
+    // Tray and startup live in the main process (they matter before this window exists).
+    const showDesktop = (s) => {
+      if (!s || !root.isConnected) return;
+      $$('[data-desktop]', root).forEach((input) => {
+        input.checked = !!s[input.dataset.desktop];
+        input.disabled = input.dataset.desktop === 'startup' && !s.startupAvailable;
+      });
+      if (!s.startupAvailable) $('#startupDesc', root).textContent = 'Only in the installed app (not when running from source).';
+    };
+    neko.desktopSettings().then(showDesktop, () => {});
+    $$('[data-desktop]', root).forEach((input) => input.addEventListener('change', async () => {
+      try {
+        showDesktop(await neko.setDesktopSetting(input.dataset.desktop, input.checked));
+      } catch (e) {
+        input.checked = !input.checked;
+        toast('Could not change that setting', { type: 'error', message: e.message });
+      }
+    }));
     $('#logout', root).addEventListener('click', () => App.signOut());
   },
 };

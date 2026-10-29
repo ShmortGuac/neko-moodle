@@ -13,6 +13,7 @@ Where NEKO is heading. Tick items off as they ship, and move them between sectio
       Windows installer and portable build
 - [x] **0.1.1**: choose the download folder; import themes; open the themes folder
 - [x] **0.1.2**: PDF viewer, lessons, theme export, update checks with What's new, theme editor guides and grid
+- [x] **0.1.3**: keep running in the tray, open on startup, a smaller download
 
 ---
 
@@ -20,10 +21,10 @@ Where NEKO is heading. Tick items off as they ship, and move them between sectio
 
 NEKO only knows about new things while it's open. This release lets it keep watch in the background and tell you.
 
-- [ ] **Tray icon**: closing the window hides NEKO to the system tray instead of quitting (Settings toggle).
-      The tray menu has Open, Check now, Pause notifications, Quit.
-- [ ] **Open on startup**: Settings toggle to start NEKO when you sign in to Windows
-      (`app.setLoginItemSettings`), optionally straight to the tray.
+- [x] **Tray icon**: closing the window hides NEKO to the system tray instead of quitting (Settings toggle).
+      The tray menu has Open and Quit; Check now and Pause notifications come with the background check.
+- [x] **Open on startup**: Settings toggle to start NEKO when you sign in to Windows
+      (`app.setLoginItemSettings`), straight to the tray when the tray is on.
 - [ ] **Background check**: every N minutes (default 15, adjustable), fetch announcements, forum
       discussions, assignments and upcoming events, then compare them with what was seen last time (kept in
       `userData`).
@@ -95,6 +96,21 @@ Integrations are off until switched on, and each says exactly what it sends wher
 - [x] **Export theme**: one-click `.zip` of a theme for sharing (the other half of Import)
 - [ ] **Follow Windows**: switch between a light and a dark theme with the system setting
 - [ ] Per-course colours or banners
+
+## Site profiles
+
+Today site profiles (`sites/*.json`: school name, login quick picks, sign-in label, course and person name
+tidying) only work when running from source; released builds don't include any. Let people add their own
+instead, so NEKO stays neutral and no school's profile has to live in the repo.
+
+- [ ] **User profiles folder**: NEKO reads profiles from `%APPDATA%\NEKO\sites` (like user themes), with an
+      **Open profiles folder** button in Settings
+- [ ] **Import / export a profile** (`.json`, or a `.zip` with its logo), so classmates can share one file
+- [ ] **Profile editor** in Settings: name, quick-pick addresses, sign-in label, and a live preview of the
+      course-name pattern on your own course list
+- [ ] Safe by design: profiles are data only (no code), images stay inside their folder, and a bad profile
+      is skipped with a note instead of breaking sign-in
+- [ ] Later: a community list of profiles people have shared (like the theme gallery)
 
 ## Distribution
 
